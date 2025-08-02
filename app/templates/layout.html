@@ -25,6 +25,9 @@
     <nav class="bg-white shadow-md">
         <div class="container mx-auto px-6 py-3 flex justify-between items-center">
             <a href="{{ url_for('menu_principal') if 'user_id' in session else url_for('login') }}" class="text-2xl font-bold text-green-600">🐾 App Mascotas</a>
+                {% if 'user_id' in session and request.endpoint != 'menu_principal' %}
+                    <a href="{{ url_for('menu_principal') }}" class="btn btn-primary">Menú Principal</a>
+                {% endif %}
             <div>
                 {% if 'user_id' in session %}
                     <span class="text-gray-700 mr-4">Hola, {{ session.user_name }} ({{ session.user_profile }})</span>

@@ -1,5 +1,8 @@
 from flask import Flask
 from config import Config
+from flask_mail import Mail, Message
+
+mail = Mail()
 
 def create_app():
     """Crea y configura una instancia de la aplicación Flask."""
@@ -14,5 +17,14 @@ def create_app():
 
         # Importar las rutas después de inicializar la BD
         from . import routes
+     # Configuración de Flask-Mail (ejemplo con Gmail)
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'correo'      # Cambia por tu correo
+    app.config['MAIL_PASSWORD'] = 'contraseña'
+    app.config['MAIL_DEFAULT_SENDER'] = 'correo'
 
+    mail.init_app(app)
+    
     return app

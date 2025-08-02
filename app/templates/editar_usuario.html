@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block title %}Editar Usuario{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="card">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">Editando Usuario: {{ usuario.nombreu }}</h1>
+        <form action="{{ url_for('editar_usuario', id=usuario.Idusuario) }}" method="POST" class="space-y-4">
+            <div>
+                <label for="nombreu" class="block text-sm font-medium text-gray-700">Nombre de Usuario*</label>
+                <input type="text" name="nombreu" id="nombreu" required value="{{ usuario.nombreu }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label for="contrasena" class="block text-sm font-medium text-gray-700">Nueva Contraseña (opcional)</label>
+                <input type="password" name="contrasena" id="contrasena" placeholder="Dejar en blanco para no cambiar" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Persona Asociada</label>
+                <p class="mt-1 p-2 bg-gray-100 rounded-md">{{ usuario.nombre_persona }}</p>
+            </div>
+            <div>
+                <label for="idperfil" class="block text-sm font-medium text-gray-700">Asignar Perfil*</label>
+                <select name="idperfil" id="idperfil" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    {% for perfil in perfiles %}
+                    <option value="{{ perfil.Idperfil }}" {% if perfil.Idperfil == usuario.idperfil %}selected{% endif %}>
+                        {{ perfil.descripc }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex justify-end space-x-4 pt-4">
+                <a href="{{ url_for('gestion_usuarios') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

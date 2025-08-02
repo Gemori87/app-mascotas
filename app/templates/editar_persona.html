@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block title %}Editar Persona{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="card">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">Editando Persona: {{ persona.nom1 }} {{ persona.apell1 }}</h1>
+        <form action="{{ url_for('editar_persona', id=persona.Idpersona) }}" method="POST" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="nom1" class="block text-sm font-medium text-gray-700">Primer Nombre*</label>
+                    <input type="text" name="nom1" id="nom1" required value="{{ persona.nom1 }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="nom2" class="block text-sm font-medium text-gray-700">Segundo Nombre</label>
+                    <input type="text" name="nom2" id="nom2" value="{{ persona.nom2 or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="apell1" class="block text-sm font-medium text-gray-700">Primer Apellido*</label>
+                    <input type="text" name="apell1" id="apell1" required value="{{ persona.apell1 }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="apell2" class="block text-sm font-medium text-gray-700">Segundo Apellido</label>
+                    <input type="text" name="apell2" id="apell2" value="{{ persona.apell2 or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+            <div>
+                <label for="correo" class="block text-sm font-medium text-gray-700">Correo Electrónico*</label>
+                <input type="email" name="correo" id="correo" required value="{{ persona.correo }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>
+                <input type="text" name="direccion" id="direccion" value="{{ persona.direccion or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="tele" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                    <input type="tel" name="tele" id="tele" value="{{ persona.tele or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="movil" class="block text-sm font-medium text-gray-700">Móvil</label>
+                    <input type="tel" name="movil" id="movil" value="{{ persona.movil or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+            </div>
+            <div>
+                <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
+                <input type="date" name="fecha_nac" id="fecha_nac" value="{{ persona.fecha_nac.strftime('%Y-%m-%d') if persona.fecha_nac else '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div class="flex justify-end space-x-4 pt-4">
+                <a href="{{ url_for('gestion_personas') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

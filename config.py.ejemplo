@@ -1,0 +1,13 @@
+# Archivo: config.py.example
+import os
+
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'una-clave-muy-secreta-y-dificil-de-adivinar'
+
+    # --- Configuración de la Conexión a MySQL ---
+    # RELLENA ESTOS DATOS CON TU CONFIGURACIÓN LOCAL
+    DB_HOST = '127.0.0.1'
+    DB_USER = 'root'
+    DB_PASSWORD = '' # 
+    DB_DATABASE = 'AppMascotas'
+    DB_PORT = 3306

@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+{% block content %}
+<div class="flex items-center justify-center min-h-[70vh]">
+    <div class="w-full max-w-md">
+        <form method="POST" action="{{ url_for('login') }}" 
+              style="background-image: url('https://placehold.co/600x400/a7f3d0/14532d?text=Patitas+Felices'); background-size: cover; background-position: center;" 
+              class="card shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden">
+            
+            <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+            
+            <div class="relative z-10">
+                <h2 class="text-center text-4xl font-extrabold text-white">Iniciar Sesión</h2>
+                <div class="mt-8 space-y-4">
+                    <div>
+                        <label for="usuario" class="text-lg font-semibold text-white">Usuario</label>
+                        <input id="usuario" name="usuario" type="text" required class="w-full px-4 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label for="contrasena" class="text-lg font-semibold text-white">Contraseña</label>
+                        <input id="contrasena" name="contrasena" type="password" required class="w-full px-4 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full btn btn-primary text-lg mt-4">Ingresar</button>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <a href="#" class="text-sm text-green-200 hover:underline">¿Olvidaste tu contraseña?</a>
+                    <span class="mx-2 text-green-200">|</span>
+                    <a href="{{ url_for('gestion_personas') }}" class="text-sm text-green-200 hover:underline">Registrarse</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

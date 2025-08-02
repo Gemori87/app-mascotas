@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block title %}Crear Administrador Principal{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <div class="card text-center">
+        <div class="text-6xl mb-4">🎉</div>
+        <h1 class="text-2xl font-bold mb-2 text-gray-800">¡Bienvenido!</h1>
+        <p class="text-gray-600 mb-6">
+            Detectamos que eres el primer usuario en registrarte. Como administrador principal, tendrás control total sobre el sistema.
+            Por favor, completa tu cuenta creando un nombre de usuario y una contraseña.
+        </p>
+        <div class="card bg-gray-50 p-6">
+            <form action="{{ url_for('crear_primer_admin', persona_id=persona_id) }}" method="POST" class="space-y-4 text-left">
+                <div>
+                    <label for="nombreu" class="block text-sm font-medium text-gray-700">Nombre de Usuario*</label>
+                    <input type="text" name="nombreu" id="nombreu" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                </div>
+                <div>
+                    <label for="contrasena" class="block text-sm font-medium text-gray-700">Contraseña*</label>
+                    <input type="password" name="contrasena" id="contrasena" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <button type="submit" class="w-full btn btn-primary mt-4">Finalizar y Crear Cuenta de Admin</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

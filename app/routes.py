@@ -365,3 +365,34 @@ def inhabilitar_usuario(id):
             conn.rollback()
             flash(f'Error al cambiar el estado del usuario: {err}', 'error')
     return redirect(url_for('gestion_usuarios'))
+
+@app.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    # Aquí va el formulario y la lógica para cambiar la contraseña usando el token
+    # Ejemplo mínimo:
+    if request.method == 'POST':
+        nueva = request.form['contrasena']
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT user_id, expires_at FROM reset_tokens WHERE token = %s", (token,))
+        token_row = cursor.fetchone()
+        import datetime
+        if not token_row or datetime.datetime.now() > token_row['expires_at']:
+            flash('El enlace de restablecimiento es inválido o ha expirado.', 'error')
+            return redirect(url_for('login'))
+        user_id = token_row['user_id']
+        cursor.execute("UPDATE Usuario SET contrasena = %s WHERE Idusuario = %s", (nueva, user_id))
+        cursor.execute("DELETE FROM reset_tokens WHERE token = %s", (token,))
+        conn.commit()
+        flash('Contraseña actualizada exitosamente. Ahora puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', token=token)
+
+def send_email(to, subject, html_body):
+    msg = Message(
+        subject,
+        recipients=[to],
+        html=html_body,
+        charset='utf-8'   # <<--- LA LÍNEA CLAVE
+    )
+    mail.send(msg)

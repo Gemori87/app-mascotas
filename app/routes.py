@@ -1,6 +1,8 @@
 from flask import render_template, request, redirect, url_for, flash, session, current_app
 import mysql.connector
 from .db import get_db
+from flask_mail import Message
+from app import mail
 
 app = current_app
 
@@ -365,6 +367,57 @@ def inhabilitar_usuario(id):
             conn.rollback()
             flash(f'Error al cambiar el estado del usuario: {err}', 'error')
     return redirect(url_for('gestion_usuarios'))
+
+from flask import render_template, request, redirect, url_for, flash, session, current_app
+import mysql.connector
+from .db import get_db
+
+
+# ... otras rutas ...
+
+@app.route('/forgot', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        correo = request.form['correo']
+        conn = get_db()
+        # <-- El truco va aquí: buffered=True
+        cursor_select = conn.cursor(dictionary=True, buffered=True)
+        cursor_select.execute(
+            "SELECT Idusuario FROM Usuario u JOIN Persona p ON u.idpersona = p.Idpersona WHERE p.correo = %s",
+            (correo,))
+        user = cursor_select.fetchone()
+        cursor_select.close()
+
+        if user:
+            import secrets
+            import datetime
+            token = secrets.token_urlsafe(32)
+            expires = datetime.datetime.now() + datetime.timedelta(hours=1)
+
+            cursor_insert = conn.cursor()
+            cursor_insert.execute(
+                "INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (%s, %s, %s)",
+                (user['Idusuario'], token, expires)
+            )
+            conn.commit()
+            cursor_insert.close()
+
+            reset_url = url_for('reset_password', token=token, _external=True)
+            send_email(
+                correo,
+                "Restablecer contraseña - App Mascotas",
+                f"""
+                <p>Hola,</p>
+                <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+                <p><a href="{reset_url}">{reset_url}</a></p>
+                <p>Este enlace expirará en 1 hora.</p>
+                """
+            )
+            flash('Se envió un correo con instrucciones para restablecer tu contraseña.', 'info')
+        else:
+            flash('Si el correo existe, recibirás instrucciones para restablecer tu contraseña.', 'info')
+        return redirect(url_for('login'))
+    return render_template('olvido_contra.html')
 
 @app.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_password(token):

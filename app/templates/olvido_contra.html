@@ -3,10 +3,10 @@
 {% block content %}
 <div class="flex items-center justify-center min-h-[70vh]">
     <div class="w-full max-w-md">
-        <form method="POST"
-              style="background-image: url('https://placehold.co/600x400/a7f3d0/14532d?text=Patitas+Felices'); background-size: cover; background-position: center;"
-              class="card shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden">
-            
+        <form method="POST" action="{{ url_for('login') }}" 
+            style="background-image: url('{{ url_for('static', filename='media/background.png') }}'); background-size: cover; background-position: center;" 
+            class="card shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden">
+
             <div class="absolute inset-0 bg-black bg-opacity-40"></div>
             
             <div class="relative z-10">

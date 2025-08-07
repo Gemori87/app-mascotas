@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
-{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block title %}Gestión de Medicamentos{% endblock %}
+
 {% block content %}
 <style>
 body {
@@ -8,86 +10,83 @@ body {
     background-size: cover;
 }
 </style>
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Usuarios</h1>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Medicamentos</h1>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
     <!-- Columna del Formulario -->
     <div class="lg:col-span-1">
         <div class="card">
-            <h2 class="text-xl font-bold mb-4">Crear Nuevo Usuario</h2>
-            <form action="{{ url_for('crear_usuario') }}" method="POST" class="space-y-4">
+            <h2 class="text-xl font-bold mb-4">Crear Nuevo Medicamento</h2>
+            <form action="{{ url_for('gestion_medicamentos') }}" method="POST" class="space-y-4">
                 <div>
-                    <label for="nombreu" class="block text-sm font-medium text-gray-700">Nombre de Usuario*</label>
-                    <input type="text" name="nombreu" id="nombreu" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de medicamento*</label>
+                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
-                    <label for="contrasena" class="block text-sm font-medium text-gray-700">Contraseña*</label>
-                    <input type="password" name="contrasena" id="contrasena" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="presentacion" class="block text-sm font-medium text-gray-700">Presentación*</label>
+                    <input type="text" name="presentacion" id="presentacion" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
                 <div>
-                    <label for="idpersona" class="block text-sm font-medium text-gray-700">Asociar a Persona*</label>
-                    <select name="idpersona" id="idpersona" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        <option value="">Seleccione una persona...</option>
-                        {% for persona in personas %}
-                        <option value="{{ persona.Idpersona }}">{{ persona.nombre_completo }}</option>
+                    <label for="idmascota" class="block text-sm font-medium text-gray-700">Asociar a mascota*</label>
+                    <select name="idmascota" id="idmascota" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Seleccione una mascota...</option>
+                        {% for mascota in mascotas %}
+                        <option value="{{ mascota.Idmascota }}">{{ mascota.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label for="idperfil" class="block text-sm font-medium text-gray-700">Asignar Perfil*</label>
-                    <select name="idperfil" id="idperfil" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        <option value="">Seleccione un perfil...</option>
-                        {% for perfil in perfiles %}
-                        <option value="{{ perfil.Idperfil }}">{{ perfil.descripc }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="w-full btn btn-primary">Guardar Usuario</button>
+                <button type="submit" class="w-full btn btn-primary">Guardar medicamento</button>
             </form>
         </div>
     </div>
+
     <!-- Columna de la Tabla -->
     <div class="lg:col-span-2">
         <div class="card">
-            <h2 class="text-xl font-bold mb-4">Usuarios Registrados</h2>
+            <h2 class="text-xl font-bold mb-4">Medicamentos Registrados</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Persona</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Perfil</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Presentación</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        {% for usuario in usuarios %}
+                        {% for medicamento in medicamentos %}
                         <tr>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.nombreu }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.nombre_persona }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.descripc }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.Idmedicamento }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.nombre }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.presentacion }}</td>
                             <td class="px-4 py-4 whitespace-nowrap">
-                                {% if usuario.estado %}
+                                {% if medicamento.estado %}
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
                                 {% else %}
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
                                 {% endif %}
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                
-                                <a href="{{ url_for('editar_usuario', id=usuario.Idusuario) }}" class="btn bg-blue-500 hover:bg-blue-600 text-white text-xs">Modificar</a>
-                                <a href="{{ url_for('inhabilitar_usuario', id=usuario.Idusuario) }}" class="btn {{ 'btn-danger' if usuario.estado else 'btn-primary' }} text-xs">
-                                    {{ 'Inhabilitar' if usuario.estado else 'Habilitar' }}
+                                <a href="{{ url_for('editar_medicamento', id=medicamento.Idmedicamento) }}" class="btn bg-blue-500 hover:bg-blue-600 text-white text-xs">Modificar</a>
+                                <a href="{{ url_for('inhabilitar_medicamento', id=medicamento.Idmedicamento) }}" class="btn {{ 'btn-danger' if medicamento.estado else 'btn-primary' }} text-xs">
+                                    {{ 'Inhabilitar' if medicamento.estado else 'Habilitar' }}
                                 </a>
                             </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay usuarios registrados.</td></tr>
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-gray-500">No hay medicamentos registrados.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}

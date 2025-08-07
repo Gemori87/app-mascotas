@@ -1686,3 +1686,26 @@ def inhabilitar_mascota(id):
         conn.rollback()
         flash(f'Error al cambiar el estado: {err}', 'error')
     return redirect(url_for('gestion_mascotas'))
+
+@app.route('/asignar_mascota', methods=['GET', 'POST'])
+def asignar_mascota():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener mascotas activas
+    cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1")
+    mascotas = cursor.fetchall()
+
+    # Obtener usuarios existentes
+    cursor.execute("""
+        SELECT u.Idusuario, u.nombreu, p.nom1, p.apell1
+        FROM usuario u
+        JOIN persona p ON u.Idpersona = p.Idpersona
+        WHERE u.estado = 1
+    """)
+    usuarios = cursor.fetchall()
+
+    return render_template("asignar_mascotas.html", mascotas=mascotas, usuarios=usuarios)
+

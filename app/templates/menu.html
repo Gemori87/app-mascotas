@@ -61,6 +61,18 @@ body {
         <p class="text-gray-600 mt-2">Registrar y consultar la información de las mascotas.</p>
     </a>
 
+    <a href="{{ url_for('gestion_medicamentos') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">💊</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Medicamentos</h3>
+        <p class="text-gray-600 mt-2">Registrar y consultar la información de los medicamentos.</p>
+    </a>
+
+    <a href="{{ url_for('gestion_veterinarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">👤</div>
+        <h3 class="text-2xl font-bold text-gray-800">Dueños & veterinarios</h3>
+        <p class="text-gray-600 mt-2">Asigna un veterinario a los pacientes</p>
+    </a>
+
     <!-- Tarjetas solo para Administradores -->
     {% if session.user_profile == 'Administrador' %}
     <a href="{{ url_for('gestion_usuarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">

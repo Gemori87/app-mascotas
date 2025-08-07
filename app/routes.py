@@ -302,6 +302,42 @@ def inhabilitar_perfil(id):
                 flash(f'Error al cambiar el estado del perfil: {err}', 'error')
     return redirect(url_for('gestion_perfiles'))
 
+@app.route('/medicamentos')
+def gestion_medicamentos():
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+    conn = get_db()
+    usuarios, personas, perfiles = [], [], []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
+        cursor.execute(query_usuarios)
+        usuarios = cursor.fetchall()
+        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
+        personas = cursor.fetchall()
+        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
+        perfiles = cursor.fetchall()
+    return render_template('gestion_medicamentos.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
+
+@app.route('/veterinarios')
+def gestion_veterinarios():
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+    conn = get_db()
+    usuarios, personas, perfiles = [], [], []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
+        cursor.execute(query_usuarios)
+        usuarios = cursor.fetchall()
+        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
+        personas = cursor.fetchall()
+        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
+        perfiles = cursor.fetchall()
+    return render_template('gestion_veterinarios.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
+
 @app.route('/usuarios')
 def gestion_usuarios():
     if session.get('user_profile') != 'Administrador':

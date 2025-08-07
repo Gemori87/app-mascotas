@@ -1,0 +1,220 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Enfermedad{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Enfermedad</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna del Formulario -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-yellow-600">Modificar Datos de la Enfermedad</h2>
+                <a href="{{ url_for('gestion_enfermedades') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+            
+            <form method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre de la Enfermedad <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="nombre" id="nombre" required
+                               value="{{ enfermedad.nombre }}"
+                               placeholder="Ej: Parvovirus, Moquillo, Sarna, etc."
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                               maxlength="100">
+                        <p class="mt-1 text-xs text-gray-500">Ingrese el nombre específico de la enfermedad</p>
+                    </div>
+                    
+                    <div>
+                        <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-2">
+                            Observaciones
+                        </label>
+                        <textarea name="observaciones" id="observaciones" rows="4"
+                                  placeholder="Descripción adicional, síntomas principales, tratamientos comunes, etc."
+                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                                  maxlength="255">{{ enfermedad.observaciones or '' }}</textarea>
+                        <p class="mt-1 text-xs text-gray-500">
+                            <span id="charCount">{{ (enfermedad.observaciones or '')|length }}</span>/255 caracteres
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-6 border-t">
+                    <a href="{{ url_for('gestion_enfermedades') }}" 
+                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                        <i class="fas fa-save"></i> Actualizar Enfermedad
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Columna de Vista Previa -->
+    <div class="lg:col-span-1">
+        <div class="card sticky top-6">
+            <h3 class="text-lg font-semibold text-blue-600 mb-4">Vista Previa</h3>
+            
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">ID</h4>
+                    <p class="text-gray-900">#{{ enfermedad.Idenfermedad }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Nombre</h4>
+                    <p id="previewNombre" class="text-gray-900">{{ enfermedad.nombre }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Observaciones</h4>
+                    <p id="previewObservaciones" class="text-gray-900 text-sm">
+                        {{ enfermedad.observaciones or 'Sin observaciones' }}
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Estado Actual</h4>
+                    {% if enfermedad.estado %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Activa
+                        </span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Inactiva
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información de ayuda -->
+            <div class="mt-6 bg-yellow-50 p-4 rounded-md">
+                <h4 class="text-sm font-medium text-yellow-700 mb-2">
+                    <i class="fas fa-exclamation-triangle"></i> Importante
+                </h4>
+                <ul class="text-xs text-yellow-600 space-y-1">
+                    <li>• El nombre debe ser único</li>
+                    <li>• Los cambios se aplicarán inmediatamente</li>
+                    <li>• No se puede cambiar el estado desde aquí</li>
+                    <li>• Use el botón de estado en la lista principal</li>
+                </ul>
+            </div>
+            
+            <!-- Historial (si hay registros asociados) -->
+            <div class="mt-6 bg-blue-50 p-4 rounded-md">
+                <h4 class="text-sm font-medium text-blue-700 mb-2">
+                    <i class="fas fa-history"></i> Información del Sistema
+                </h4>
+                <ul class="text-xs text-blue-600 space-y-1">
+                    <li>• Creado: Sistema</li>
+                    <li>• ID único: {{ enfermedad.Idenfermedad }}</li>
+                    <li>• Estado controlado por administrador</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar vista previa en tiempo real
+document.getElementById('nombre').addEventListener('input', function() {
+    const value = this.value.trim();
+    document.getElementById('previewNombre').textContent = value || 'Ingrese el nombre...';
+    document.getElementById('previewNombre').className = value ? 'text-gray-900' : 'text-gray-600 italic';
+});
+
+document.getElementById('observaciones').addEventListener('input', function() {
+    const value = this.value.trim();
+    document.getElementById('previewObservaciones').textContent = value || 'Sin observaciones';
+    document.getElementById('previewObservaciones').className = value ? 'text-gray-900 text-sm' : 'text-gray-600 italic text-sm';
+    
+    // Actualizar contador de caracteres
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// Validación antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const nombre = document.getElementById('nombre').value.trim();
+    
+    if (!nombre) {
+        e.preventDefault();
+        alert('El nombre de la enfermedad es obligatorio.');
+        document.getElementById('nombre').focus();
+        return false;
+    }
+    
+    if (nombre.length < 2) {
+        e.preventDefault();
+        alert('El nombre debe tener al menos 2 caracteres.');
+        document.getElementById('nombre').focus();
+        return false;
+    }
+    
+    // Confirmar actualización
+    if (!confirm('¿Está seguro que desea actualizar esta enfermedad?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Validar caracteres especiales en el nombre
+document.getElementById('nombre').addEventListener('keypress', function(e) {
+    const char = String.fromCharCode(e.which);
+    const allowedChars = /[a-zA-Z0-9\sáéíóúñÁÉÍÓÚÑ\-()]/;
+    
+    if (!allowedChars.test(char)) {
+        e.preventDefault();
+    }
+});
+
+// Detectar cambios para mostrar alerta de cambios sin guardar
+let originalData = {
+    nombre: document.getElementById('nombre').value,
+    observaciones: document.getElementById('observaciones').value
+};
+
+let hasChanges = false;
+
+function detectChanges() {
+    const currentData = {
+        nombre: document.getElementById('nombre').value,
+        observaciones: document.getElementById('observaciones').value
+    };
+    
+    hasChanges = JSON.stringify(originalData) !== JSON.stringify(currentData);
+}
+
+document.getElementById('nombre').addEventListener('input', detectChanges);
+document.getElementById('observaciones').addEventListener('input', detectChanges);
+
+// Alerta antes de salir sin guardar
+window.addEventListener('beforeunload', function(e) {
+    if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Auto-foco en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('nombre').focus();
+    document.getElementById('nombre').select();
+});
+</script>
+{% endblock %}

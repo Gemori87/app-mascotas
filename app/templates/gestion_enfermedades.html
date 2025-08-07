@@ -1,0 +1,191 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Enfermedades{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Enfermedades</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Columna de Filtros -->
+    <div class="lg:col-span-1">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4 text-blue-600">Filtros de Búsqueda</h2>
+            <form method="GET" class="space-y-4">
+                <div>
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input type="text" name="nombre" id="nombre" 
+                           placeholder="Nombre de enfermedad" 
+                           value="{{ request.args.get('nombre', '') }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                    <select name="estado" id="estado" 
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Todos los estados</option>
+                        <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>Activo</option>
+                        <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>Inactivo</option>
+                    </select>
+                </div>
+                <div class="flex space-x-2">
+                    <button type="submit" class="btn bg-blue-500 hover:bg-blue-600 text-white flex-1">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{{ url_for('gestion_enfermedades') }}" 
+                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+            
+            <!-- Botón de Crear -->
+            <div class="mt-6">
+                <a href="{{ url_for('crear_enfermedad') }}" 
+                   class="w-full btn bg-green-500 hover:bg-green-600 text-white">
+                    <i class="fas fa-plus"></i> Nueva Enfermedad
+                </a>
+            </div>
+            
+            <!-- Estadísticas rápidas -->
+            <div class="mt-6 bg-gray-50 p-4 rounded-md">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Estadísticas</h3>
+                <div class="space-y-1 text-xs text-gray-600">
+                    <div>Total registros: <span class="font-semibold">{{ enfermedades|length }}</span></div>
+                    <div>Activas: <span class="font-semibold text-green-600">{{ enfermedades|selectattr('estado')|list|length }}</span></div>
+                    <div>Inactivas: <span class="font-semibold text-red-600">{{ (enfermedades|length) - (enfermedades|selectattr('estado')|list|length) }}</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Columna de la Tabla -->
+    <div class="lg:col-span-3">
+        <div class="card">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-purple-600">Listado de Enfermedades</h2>
+                <div class="text-sm text-gray-500">
+                    {{ enfermedades|length }} enfermedad(es) encontrada(s)
+                </div>
+            </div>
+            
+            {% if enfermedades %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Observaciones</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for enfermedad in enfermedades %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ enfermedad.Idenfermedad }}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ enfermedad.nombre }}</div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="text-sm text-gray-600 max-w-xs truncate">
+                                    {{ enfermedad.observaciones or 'Sin observaciones' }}
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                {% if enfermedad.estado %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Activa
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Inactiva
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">
+                                <a href="{{ url_for('editar_enfermedad', id=enfermedad.Idenfermedad) }}" 
+                                   class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs" 
+                                   title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if session.user_profile == 'Administrador' %}
+                                <a href="{{ url_for('inhabilitar_enfermedad', id=enfermedad.Idenfermedad) }}" 
+                                   class="btn {{ 'bg-red-500 hover:bg-red-600' if enfermedad.estado else 'bg-green-500 hover:bg-green-600' }} text-white text-xs"
+                                   title="{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}"
+                                   onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} esta enfermedad?')">
+                                    <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %}"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Información adicional en la parte inferior -->
+            <div class="mt-4 flex justify-between items-center text-sm text-gray-500 border-t pt-4">
+                <div>
+                    Mostrando {{ enfermedades|length }} registros
+                </div>
+                <div class="flex space-x-4">
+                    <span>Última actualización: {{ now().strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-12">
+                <div class="mx-auto h-24 w-24 text-gray-400">
+                    <i class="fas fa-virus text-6xl"></i>
+                </div>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">No hay enfermedades registradas</h3>
+                <p class="mt-2 text-sm text-gray-500">
+                    {% if request.args %}
+                        No se encontraron enfermedades con los filtros aplicados.
+                        <a href="{{ url_for('gestion_enfermedades') }}" class="text-blue-600 hover:text-blue-500">
+                            Limpiar filtros
+                        </a>
+                    {% else %}
+                        Comience registrando la primera enfermedad.
+                    {% endif %}
+                </p>
+                <div class="mt-6">
+                    <a href="{{ url_for('crear_enfermedad') }}" 
+                       class="btn bg-green-500 hover:bg-green-600 text-white">
+                        <i class="fas fa-plus"></i> Registrar Primera Enfermedad
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Funcionalidad para limpiar filtros individuales
+function clearFilter(inputId) {
+    document.getElementById(inputId).value = '';
+}
+
+// Auto-submit del formulario cuando se cambia el estado
+document.getElementById('estado').addEventListener('change', function() {
+    document.querySelector('form').submit();
+});
+
+// Confirmar acciones de eliminación con más detalle
+function confirmAction(action, id, name) {
+    return confirm(`¿Está seguro que desea ${action} la enfermedad "${name}"?`);
+}
+</script>
+{% endblock %}

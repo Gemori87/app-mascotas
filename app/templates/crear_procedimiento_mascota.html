@@ -1,0 +1,442 @@
+{% extends "layout.html" %}
+
+{% block title %}Crear Procedimiento de Mascota{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Registrar Procedimiento de Mascota</h1>
+
+<div class="max-w-3xl mx-auto">
+    <div class="card">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-blue-600">Nuevo Procedimiento Médico</h2>
+            <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+               class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+        
+        <form method="POST" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Información de la mascota -->
+                <div class="md:col-span-2 bg-blue-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-blue-700 mb-3">
+                        <i class="fas fa-paw"></i> Información de la Mascota
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idmascota" class="block text-sm font-medium text-gray-700 mb-2">
+                                Mascota <span class="text-red-500">*</span>
+                            </label>
+                            <select name="idmascota" id="idmascota" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Seleccione una mascota</option>
+                                {% for mascota in mascotas %}
+                                <option value="{{ mascota.idmascota }}" 
+                                        data-especie="{{ mascota.especie }}"
+                                        data-raza="{{ mascota.raza }}"
+                                        data-propietario="{{ mascota.propietario }}">
+                                    {{ mascota.nombre }} - {{ mascota.especie }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Información adicional de la mascota seleccionada -->
+                        <div id="info-mascota" class="hidden">
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <p><strong>Especie:</strong> <span id="mascota-especie">-</span></p>
+                                <p><strong>Raza:</strong> <span id="mascota-raza">-</span></p>
+                                <p><strong>Propietario:</strong> <span id="mascota-propietario">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información del procedimiento -->
+                <div class="md:col-span-2 bg-green-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-green-700 mb-3">
+                        <i class="fas fa-stethoscope"></i> Información del Procedimiento
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idprocedimiento" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Procedimiento <span class="text-red-500">*</span>
+                            </label>
+                            <select name="idprocedimiento" id="idprocedimiento" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Seleccione un procedimiento</option>
+                                {% for procedimiento in tipos_procedimientos %}
+                                <option value="{{ procedimiento.Idprocedimiento }}">{{ procedimiento.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="fecha" class="block text-sm font-medium text-gray-700 mb-2">
+                                Fecha del Procedimiento <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" name="fecha" id="fecha" required
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <p class="mt-1 text-xs text-gray-500">No puede ser una fecha futura</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información profesional -->
+                <div class="md:col-span-2 bg-yellow-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-yellow-700 mb-3">
+                        <i class="fas fa-user-md"></i> Información Profesional
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idveterinario" class="block text-sm font-medium text-gray-700 mb-2">
+                                Veterinario a Cargo
+                            </label>
+                            <select name="idveterinario" id="idveterinario"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                                <option value="">Seleccione un veterinario</option>
+                                {% for vet in veterinarios %}
+                                <option value="{{ vet.idveterinario }}">{{ vet.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Opcional - Veterinario responsable</p>
+                        </div>
+                        
+                        <div>
+                            <label for="costo" class="block text-sm font-medium text-gray-700 mb-2">
+                                Costo del Procedimiento
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-500">$</span>
+                                <input type="number" name="costo" id="costo" step="0.01" min="0"
+                                       placeholder="0.00"
+                                       class="block w-full pl-8 rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Opcional - En pesos colombianos</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Descripción y observaciones -->
+                <div class="md:col-span-2">
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción y Observaciones
+                    </label>
+                    <textarea name="descripcion" id="descripcion" rows="4"
+                              placeholder="Describa el procedimiento realizado, observaciones importantes, recomendaciones para el propietario..."
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              maxlength="500"></textarea>
+                    <div class="flex justify-between mt-1">
+                        <p class="text-xs text-gray-500">Opcional - Incluya toda la información relevante</p>
+                        <p id="char-counter" class="text-xs text-gray-500">0/500 caracteres</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="flex justify-end space-x-3 pt-6 border-t">
+                <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn bg-blue-500 hover:bg-blue-600 text-white">
+                    <i class="fas fa-save"></i> Registrar Procedimiento
+                </button>
+            </div>
+        </form>
+        
+        <!-- Información adicional -->
+        <div class="mt-6 pt-6 border-t">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 p-4 rounded-md">
+                    <h4 class="text-sm font-medium text-blue-700 mb-2">
+                        <i class="fas fa-info-circle"></i> Información
+                    </h4>
+                    <ul class="text-xs text-blue-600 space-y-1">
+                        <li>• Todos los campos marcados con * son obligatorios</li>
+                        <li>• La fecha no puede ser futura</li>
+                        <li>• Los datos se guardarán automáticamente</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-green-50 p-4 rounded-md">
+                    <h4 class="text-sm font-medium text-green-700 mb-2">
+                        <i class="fas fa-check-circle"></i> Recomendaciones
+                    </h4>
+                    <ul class="text-xs text-green-600 space-y-1">
+                        <li>• Incluya todos los detalles importantes</li>
+                        <li>• Verifique los datos antes de guardar</li>
+                        <li>• Registre el procedimiento inmediatamente</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-yellow-50 p-4 rounded-md">
+                    <h4 class="text-sm font-medium text-yellow-700 mb-2">
+                        <i class="fas fa-exclamation-triangle"></i> Importante
+                    </h4>
+                    <ul class="text-xs text-yellow-600 space-y-1">
+                        <li>• Este registro es permanente</li>
+                        <li>• Mantenga la confidencialidad médica</li>
+                        <li>• Use terminología profesional</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Establecer fecha actual por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha');
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.value = today;
+    fechaInput.max = today; // No permitir fechas futuras
+});
+
+// Mostrar información de la mascota seleccionada
+document.getElementById('idmascota').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const infoDiv = document.getElementById('info-mascota');
+    
+    if (this.value) {
+        document.getElementById('mascota-especie').textContent = selectedOption.dataset.especie || '-';
+        document.getElementById('mascota-raza').textContent = selectedOption.dataset.raza || '-';
+        document.getElementById('mascota-propietario').textContent = selectedOption.dataset.propietario || '-';
+        infoDiv.classList.remove('hidden');
+    } else {
+        infoDiv.classList.add('hidden');
+    }
+});
+
+// Contador de caracteres para descripción
+document.getElementById('descripcion').addEventListener('input', function() {
+    const maxLength = 500;
+    const currentLength = this.value.length;
+    const counter = document.getElementById('char-counter');
+    
+    counter.textContent = `${currentLength}/${maxLength} caracteres`;
+    
+    if (currentLength > maxLength * 0.9) {
+        counter.className = 'text-xs text-red-500';
+    } else if (currentLength > maxLength * 0.7) {
+        counter.className = 'text-xs text-yellow-500';
+    } else {
+        counter.className = 'text-xs text-gray-500';
+    }
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mascota = document.getElementById('idmascota').value;
+    const tipoProcedimiento = document.getElementById('idprocedimiento').value;
+    const fecha = document.getElementById('fecha').value;
+    
+    // Validar campos obligatorios
+    if (!mascota || !tipoProcedimiento || !fecha) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos obligatorios (marcados con *).');
+        return false;
+    }
+    
+    // Validar fecha
+    const fechaSeleccionada = new Date(fecha);
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999); // Fin del día actual
+    
+    if (fechaSeleccionada > hoy) {
+        e.preventDefault();
+        alert('La fecha del procedimiento no puede ser futura.');
+        document.getElementById('fecha').focus();
+        return false;
+    }
+    
+    // Validar costo si se ingresó
+    const costo = document.getElementById('costo').value;
+    if (costo && (isNaN(costo) || parseFloat(costo) < 0)) {
+        e.preventDefault();
+        alert('El costo debe ser un número válido mayor o igual a 0.');
+        document.getElementById('costo').focus();
+        return false;
+    }
+    
+    // Confirmar registro
+    if (!confirm('¿Está seguro que desea registrar este procedimiento?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Formateo del costo
+document.getElementById('costo').addEventListener('blur', function() {
+    if (this.value) {
+        const value = parseFloat(this.value);
+        if (!isNaN(value)) {
+            this.value = value.toFixed(2);
+        }
+    }
+});
+
+// Auto-focus en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('idmascota').focus();
+});
+
+// Prevenir envío múltiple del formulario
+let formSubmitted = false;
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (formSubmitted) {
+        e.preventDefault();
+        return false;
+    }
+    formSubmitted = true;
+    
+    // Cambiar el texto del botón
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    submitBtn.disabled = true;
+    
+    // Si hay error, restaurar el botón
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        formSubmitted = false;
+    }, 3000);
+});
+</script>
+{% endblock %}
+                        <option value="">Selecciona un veterinario (opcional)</option>
+                        {% for vet in veterinarios %}
+                        <option value="{{ vet.Idpersona }}">{{ vet.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tercera fila: Observaciones -->
+            <div>
+                <label for="observacion" class="block text-sm font-medium text-gray-700">Observaciones</label>
+                <textarea id="observacion" name="observacion" rows="4" 
+                          placeholder="Observaciones del procedimiento, reacciones, recomendaciones..." 
+                          maxlength="255" 
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                <div id="char-counter" class="text-sm text-gray-500 mt-1">Máximo 255 caracteres</div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="flex flex-wrap gap-3 pt-4">
+                <a href="{{ url_for('gestion_procedimientos_mascotas') }}" class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn bg-blue-500 hover:bg-blue-600 text-white">
+                    <i class="fas fa-save"></i> Registrar Procedimiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Vista previa de información (opcional) -->
+<div class="grid grid-cols-1 lg:grid-cols-1 gap-6 mt-6">
+    <div class="card">
+        <h2 class="text-xl font-bold mb-4 text-green-600">Vista Previa</h2>
+        <div class="bg-gray-50 p-4 rounded-md">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="font-medium text-gray-600">Mascota seleccionada:</span>
+                    <span id="preview-mascota" class="text-gray-800 ml-2">-</span>
+                </div>
+                <div>
+                    <span class="font-medium text-gray-600">Procedimiento:</span>
+                    <span id="preview-procedimiento" class="text-gray-800 ml-2">-</span>
+                </div>
+                <div>
+                    <span class="font-medium text-gray-600">Fecha:</span>
+                    <span id="preview-fecha" class="text-gray-800 ml-2">-</span>
+                </div>
+                <div>
+                    <span class="font-medium text-gray-600">Veterinario:</span>
+                    <span id="preview-veterinario" class="text-gray-800 ml-2">-</span>
+                </div>
+            </div>
+            <div class="mt-3" id="preview-observacion-container" style="display: none;">
+                <span class="font-medium text-gray-600">Observaciones:</span>
+                <div id="preview-observacion" class="bg-yellow-50 p-2 rounded border border-yellow-200 mt-1 text-sm"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Establecer fecha actual por defecto
+document.getElementById('fecha').valueAsDate = new Date();
+
+// Contador de caracteres para observaciones
+document.getElementById('observacion').addEventListener('input', function() {
+    const maxLength = 255;
+    const currentLength = this.value.length;
+    const charCounter = document.getElementById('char-counter');
+    charCounter.textContent = `${currentLength}/${maxLength} caracteres`;
+    
+    if (currentLength > maxLength * 0.9) {
+        charCounter.classList.remove('text-gray-500');
+        charCounter.classList.add('text-yellow-600');
+    } else {
+        charCounter.classList.remove('text-yellow-600');
+        charCounter.classList.add('text-gray-500');
+    }
+    
+    // Actualizar vista previa
+    updatePreviewObservacion();
+});
+
+// Vista previa en tiempo real
+function updatePreview() {
+    const mascotaSelect = document.getElementById('idmascota');
+    const procedimientoSelect = document.getElementById('idprocedimiento');
+    const fechaInput = document.getElementById('fecha');
+    const veterinarioSelect = document.getElementById('idveterinario');
+    
+    document.getElementById('preview-mascota').textContent = 
+        mascotaSelect.selectedOptions[0]?.text || '-';
+    document.getElementById('preview-procedimiento').textContent = 
+        procedimientoSelect.selectedOptions[0]?.text || '-';
+    document.getElementById('preview-fecha').textContent = 
+        fechaInput.value ? new Date(fechaInput.value).toLocaleDateString('es-ES') : '-';
+    document.getElementById('preview-veterinario').textContent = 
+        veterinarioSelect.selectedOptions[0]?.text || 'No asignado';
+}
+
+function updatePreviewObservacion() {
+    const observacion = document.getElementById('observacion').value;
+    const container = document.getElementById('preview-observacion-container');
+    const preview = document.getElementById('preview-observacion');
+    
+    if (observacion.trim()) {
+        preview.textContent = observacion;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// Event listeners para vista previa
+document.getElementById('idmascota').addEventListener('change', updatePreview);
+document.getElementById('idprocedimiento').addEventListener('change', updatePreview);
+document.getElementById('fecha').addEventListener('change', updatePreview);
+document.getElementById('idveterinario').addEventListener('change', updatePreview);
+document.getElementById('observacion').addEventListener('input', updatePreviewObservacion);
+
+// Actualizar vista previa inicial
+updatePreview();
+</script>
+{% endblock %}

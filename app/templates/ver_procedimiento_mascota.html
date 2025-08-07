@@ -1,0 +1,461 @@
+{% extends "layout.html" %}
+
+{% block title %}Ver Procedimiento de Mascota{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Detalles del Procedimiento</h1>
+
+<div class="max-w-4xl mx-auto">
+    <div class="card">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-blue-600">Información del Procedimiento Médico</h2>
+            <div class="flex space-x-2">
+                <a href="{{ url_for('editar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                   class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Información de la mascota -->
+            <div class="bg-blue-50 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold text-blue-700 mb-4">
+                    <i class="fas fa-paw"></i> Información de la Mascota
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Nombre:</span>
+                        <span class="text-sm font-bold text-gray-900">{{ procedimiento.mascota_nombre }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Especie:</span>
+                        <span class="text-sm text-gray-900">{{ procedimiento.mascota_especie }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Raza:</span>
+                        <span class="text-sm text-gray-900">{{ procedimiento.mascota_raza or 'No especificada' }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Propietario:</span>
+                        <span class="text-sm text-gray-900">{{ procedimiento.propietario_nombre }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">ID Mascota:</span>
+                        <span class="text-sm text-gray-500">#{{ procedimiento.Idmascota }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información del procedimiento -->
+            <div class="bg-green-50 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold text-green-700 mb-4">
+                    <i class="fas fa-stethoscope"></i> Información del Procedimiento
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">ID Registro:</span>
+                        <span class="text-sm font-bold text-gray-900">#{{ procedimiento.IdProcedimientoMascota }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Tipo:</span>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {{ procedimiento.procedimiento_nombre }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Fecha:</span>
+                        <span class="text-sm font-bold text-gray-900">
+                            {{ procedimiento.fecha.strftime('%d/%m/%Y') if procedimiento.fecha else 'No especificada' }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                        <span class="text-sm font-medium text-gray-600">Estado:</span>
+                        {% if procedimiento.estado %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                Activo
+                            </span>
+                        {% else %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                Inactivo
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información profesional -->
+        <div class="mt-6 bg-yellow-50 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-yellow-700 mb-4">
+                <i class="fas fa-user-md"></i> Información Profesional
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="flex justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-600">Veterinario:</span>
+                        <span class="text-sm text-gray-900">
+                            {{ procedimiento.veterinario_nombre or 'No asignado' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between mb-3">
+                        <span class="text-sm font-medium text-gray-600">Costo:</span>
+                        <span class="text-sm font-bold text-gray-900">
+                            {% if procedimiento.costo %}
+                                ${{ "{:,.2f}".format(procedimiento.costo) }}
+                            {% else %}
+                                No especificado
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Descripción y observaciones -->
+        {% if procedimiento.descripcion %}
+        <div class="mt-6 bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4">
+                <i class="fas fa-clipboard-list"></i> Descripción y Observaciones
+            </h3>
+            
+            <div class="text-sm text-gray-700 leading-relaxed">
+                {{ procedimiento.descripcion }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Información del sistema -->
+        <div class="mt-6 bg-gray-100 p-4 rounded-lg">
+            <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                <i class="fas fa-info-circle"></i> Información del Sistema
+            </h4>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-600">
+                <div>
+                    <span class="font-medium">Fecha de registro:</span><br>
+                    {{ procedimiento.fecha_creacion.strftime('%d/%m/%Y %H:%M') if procedimiento.fecha_creacion else 'No disponible' }}
+                </div>
+                
+                <div>
+                    <span class="font-medium">Última modificación:</span><br>
+                    {{ procedimiento.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if procedimiento.fecha_modificacion else 'No modificado' }}
+                </div>
+                
+                <div>
+                    <span class="font-medium">Usuario responsable:</span><br>
+                    {{ procedimiento.usuario_responsable or session.user_name or 'Sistema' }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones disponibles -->
+        <div class="mt-6 pt-6 border-t">
+            <div class="flex justify-between items-center">
+                <div class="flex space-x-3">
+                    <a href="{{ url_for('editar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                       class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                        <i class="fas fa-edit"></i> Editar Procedimiento
+                    </a>
+                    
+                    {% if session.user_profile == 'Administrador' %}
+                    <a href="{{ url_for('inhabilitar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                       class="btn {{ 'bg-red-500 hover:bg-red-600' if procedimiento.estado else 'bg-green-500 hover:bg-green-600' }} text-white"
+                       onclick="return confirm('¿Está seguro que desea {% if procedimiento.estado %}deshabilitar{% else %}habilitar{% endif %} este procedimiento?')">
+                        <i class="fas fa-{% if procedimiento.estado %}ban{% else %}check{% endif %}"></i> 
+                        {% if procedimiento.estado %}Deshabilitar{% else %}Habilitar{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="flex space-x-3">
+                    <!-- Botón para imprimir o exportar -->
+                    <button onclick="window.print()" 
+                            class="btn bg-blue-500 hover:bg-blue-600 text-white">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                    
+                    <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                        <i class="fas fa-arrow-left"></i> Volver a la Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Procedimientos relacionados -->
+    {% if procedimientos_relacionados %}
+    <div class="card mt-6">
+        <h3 class="text-lg font-semibold text-purple-700 mb-4">
+            <i class="fas fa-history"></i> Otros Procedimientos de {{ procedimiento.mascota_nombre }}
+        </h3>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Procedimiento</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veterinario</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for proc in procedimientos_relacionados %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            {{ proc.fecha.strftime('%d/%m/%Y') if proc.fecha else 'N/A' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            {{ proc.procedimiento_nombre }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            {{ proc.veterinario_nombre or 'No asignado' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if proc.estado %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Activo
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Inactivo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-medium">
+                            {% if proc.IdProcedimientoMascota != procedimiento.IdProcedimientoMascota %}
+                            <a href="{{ url_for('ver_procedimiento_mascota', id=proc.IdProcedimientoMascota) }}" 
+                               class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                            {% else %}
+                            <span class="text-gray-400">Actual</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@media print {
+    .btn, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+    
+    body {
+        background: white !important;
+    }
+}
+</style>
+
+<script>
+// Función para copiar información al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Información copiada al portapapeles');
+    });
+}
+
+// Función para exportar datos (placeholder)
+function exportData() {
+    const data = {
+        id: '{{ procedimiento.IdProcedimientoMascota }}',
+        mascota: '{{ procedimiento.mascota_nombre }}',
+        procedimiento: '{{ procedimiento.procedimiento_nombre }}',
+        fecha: '{{ procedimiento.fecha.strftime("%d/%m/%Y") if procedimiento.fecha }}',
+        veterinario: '{{ procedimiento.veterinario_nombre or "No asignado" }}',
+        descripcion: '{{ procedimiento.descripcion or "" }}'
+    };
+    
+    console.log('Datos del procedimiento:', data);
+    alert('Funcionalidad de exportación en desarrollo');
+}
+
+// Mostrar alerta si el procedimiento está inactivo
+{% if not procedimiento.estado %}
+document.addEventListener('DOMContentLoaded', function() {
+    const alert = document.createElement('div');
+    alert.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+    alert.innerHTML = '<strong>Atención:</strong> Este procedimiento está marcado como inactivo.';
+    document.querySelector('.card').insertBefore(alert, document.querySelector('.card').firstChild.nextSibling);
+});
+{% endif %}
+
+// Navegación con teclado
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        window.location.href = "{{ url_for('gestion_procedimientos_mascotas') }}";
+    } else if (e.key === 'e' && e.ctrlKey) {
+        e.preventDefault();
+        window.location.href = "{{ url_for('editar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}";
+    } else if (e.key === 'p' && e.ctrlKey) {
+        e.preventDefault();
+        window.print();
+    }
+});
+</script>
+{% endblock %}
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-blue-600">Información del Registro</h2>
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('editar_procedimiento_mascota', id=procedimiento_mascota.Idregistro) }}" 
+                       class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    {% if session.user_profile == 'Administrador' %}
+                    <a href="{{ url_for('inhabilitar_procedimiento_mascota', id=procedimiento_mascota.Idregistro) }}" 
+                       class="btn {{ 'bg-red-500 hover:bg-red-600' if procedimiento_mascota.estado else 'bg-green-500 hover:bg-green-600' }} text-white text-xs"
+                       onclick="return confirm('¿Está seguro que desea {% if procedimiento_mascota.estado %}deshabilitar{% else %}habilitar{% endif %} este registro?')">
+                        <i class="fas fa-{% if procedimiento_mascota.estado %}ban{% else %}check{% endif %}"></i> 
+                        {% if procedimiento_mascota.estado %}Deshabilitar{% else %}Habilitar{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">ID Registro:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ procedimiento_mascota.Idregistro }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Fecha:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {{ procedimiento_mascota.fecha.strftime('%d/%m/%Y') if procedimiento_mascota.fecha else 'N/A' }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Estado:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                {% if procedimiento_mascota.estado %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Veterinario:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ procedimiento_mascota.nombre_veterinario or 'No asignado' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Información de la Mascota -->
+        <div class="card">
+            <h2 class="text-xl font-bold text-green-600 mb-4">Información de la Mascota</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Nombre:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 font-semibold">{{ procedimiento_mascota.nombre_mascota }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Dueño:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ procedimiento_mascota.nombre_dueno }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha - Información del Procedimiento -->
+    <div>
+        <div class="card">
+            <h2 class="text-xl font-bold text-orange-600 mb-4">Información del Procedimiento</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500">Procedimiento:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                    {{ procedimiento_mascota.nombre_procedimiento }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if procedimiento_mascota.descripcion_procedimiento %}
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500 align-top">Descripción:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <div class="bg-gray-50 p-3 rounded-md border">
+                                    {{ procedimiento_mascota.descripcion_procedimiento }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if procedimiento_mascota.observacion %}
+                        <tr>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-500 align-top">Observaciones:</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <div class="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                                    {{ procedimiento_mascota.observacion }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de Acción -->
+<div class="mt-6 flex flex-wrap gap-3">
+    <a href="{{ url_for('gestion_procedimientos_mascotas') }}" class="btn bg-gray-500 hover:bg-gray-600 text-white">
+        <i class="fas fa-arrow-left"></i> Volver a la Lista
+    </a>
+    <a href="{{ url_for('editar_procedimiento_mascota', id=procedimiento_mascota.Idregistro) }}" 
+       class="btn bg-blue-500 hover:bg-blue-600 text-white">
+        <i class="fas fa-edit"></i> Editar Procedimiento
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Enfermedad de Mascota{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Enfermedad de Mascota</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna del Formulario -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-yellow-600">Modificar Datos del Registro</h2>
+                <a href="{{ url_for('gestion_enfermedades_mascotas') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+            
+            <form method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="idmascota" class="block text-sm font-medium text-gray-700 mb-2">
+                            Mascota <span class="text-red-500">*</span>
+                        </label>
+                        <select name="idmascota" id="idmascota" required
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                            <option value="">Seleccione una mascota</option>
+                            {% for mascota in mascotas %}
+                            <option value="{{ mascota.Idmascota }}" 
+                                    {% if mascota.Idmascota == enfermedad_mascota.idmascota %}selected{% endif %}>
+                                {{ mascota.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="idenfermedad" class="block text-sm font-medium text-gray-700 mb-2">
+                            Tipo de Enfermedad <span class="text-red-500">*</span>
+                        </label>
+                        <select name="idenfermedad" id="idenfermedad" required
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                            <option value="">Seleccione una enfermedad</option>
+                            {% for enfermedad in enfermedades %}
+                            <option value="{{ enfermedad.Idenfermedad }}" 
+                                    {% if enfermedad.Idenfermedad == enfermedad_mascota.idenfermedad %}selected{% endif %}>
+                                {{ enfermedad.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="fecha" class="block text-sm font-medium text-gray-700 mb-2">
+                            Fecha de Diagnóstico
+                        </label>
+                        <input type="date" name="fecha" id="fecha"
+                               value="{{ enfermedad_mascota.fecha.strftime('%Y-%m-%d') if enfermedad_mascota.fecha else '' }}"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                        <p class="mt-1 text-xs text-gray-500">Fecha en que se diagnosticó la enfermedad</p>
+                    </div>
+                    
+                    <div class="flex items-end">
+                        <button type="button" id="setToday" 
+                                class="btn bg-blue-500 hover:bg-blue-600 text-white text-sm">
+                            <i class="fas fa-calendar-day"></i> Fecha de Hoy
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="observacion" class="block text-sm font-medium text-gray-700 mb-2">
+                        Observaciones del Diagnóstico
+                    </label>
+                    <textarea name="observacion" id="observacion" rows="4"
+                              placeholder="Síntomas observados, severidad, tratamiento aplicado, evolución esperada, etc."
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                              maxlength="255">{{ enfermedad_mascota.observacion or '' }}</textarea>
+                    <p class="mt-1 text-xs text-gray-500">
+                        <span id="charCount">{{ (enfermedad_mascota.observacion or '')|length }}</span>/255 caracteres
+                    </p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-6 border-t">
+                    <a href="{{ url_for('gestion_enfermedades_mascotas') }}" 
+                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                        <i class="fas fa-save"></i> Actualizar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Columna de Vista Previa -->
+    <div class="lg:col-span-1">
+        <div class="card sticky top-6">
+            <h3 class="text-lg font-semibold text-blue-600 mb-4">Vista Previa del Registro</h3>
+            
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">ID</h4>
+                    <p class="text-gray-900">#{{ enfermedad_mascota.id }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Mascota</h4>
+                    <p id="previewMascota" class="text-gray-900">{{ enfermedad_mascota.nombre_mascota }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Enfermedad</h4>
+                    <p id="previewEnfermedad" class="text-gray-900">{{ enfermedad_mascota.nombre_enfermedad }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Fecha</h4>
+                    <p id="previewFecha" class="text-gray-900">
+                        {% if enfermedad_mascota.fecha %}
+                            {{ enfermedad_mascota.fecha.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            Sin fecha especificada
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h4 class="font-medium text-gray-700 mb-2">Observaciones</h4>
+                    <p id="previewObservacion" class="text-gray-900 text-sm">
+                        {{ enfermedad_mascota.observacion or 'Sin observaciones' }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Información de ayuda -->
+            <div class="mt-6 bg-yellow-50 p-4 rounded-md">
+                <h4 class="text-sm font-medium text-yellow-700 mb-2">
+                    <i class="fas fa-exclamation-triangle"></i> Importante
+                </h4>
+                <ul class="text-xs text-yellow-600 space-y-1">
+                    <li>• Los cambios se aplicarán inmediatamente</li>
+                    <li>• Puede cambiar mascota y enfermedad</li>
+                    <li>• La fecha es opcional</li>
+                    <li>• Las observaciones ayudan al seguimiento</li>
+                </ul>
+            </div>
+            
+            <!-- Información del sistema -->
+            <div class="mt-6 bg-blue-50 p-4 rounded-md">
+                <h4 class="text-sm font-medium text-blue-700 mb-2">
+                    <i class="fas fa-info-circle"></i> Información del Sistema
+                </h4>
+                <ul class="text-xs text-blue-600 space-y-1">
+                    <li>• Registro ID: {{ enfermedad_mascota.id }}</li>
+                    <li>• Mascota actual: {{ enfermedad_mascota.nombre_mascota }}</li>
+                    <li>• Enfermedad actual: {{ enfermedad_mascota.nombre_enfermedad }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar vista previa en tiempo real
+document.getElementById('idmascota').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const text = selectedOption.value ? selectedOption.text : 'Seleccione una mascota...';
+    document.getElementById('previewMascota').textContent = text;
+    document.getElementById('previewMascota').className = selectedOption.value ? 'text-gray-900' : 'text-gray-600 italic';
+});
+
+document.getElementById('idenfermedad').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const text = selectedOption.value ? selectedOption.text : 'Seleccione una enfermedad...';
+    document.getElementById('previewEnfermedad').textContent = text;
+    document.getElementById('previewEnfermedad').className = selectedOption.value ? 'text-gray-900' : 'text-gray-600 italic';
+});
+
+document.getElementById('fecha').addEventListener('change', function() {
+    const value = this.value;
+    if (value) {
+        const date = new Date(value);
+        const formatted = date.toLocaleDateString('es-ES');
+        document.getElementById('previewFecha').textContent = formatted;
+        document.getElementById('previewFecha').className = 'text-gray-900';
+    } else {
+        document.getElementById('previewFecha').textContent = 'Sin fecha especificada';
+        document.getElementById('previewFecha').className = 'text-gray-600 italic';
+    }
+});
+
+document.getElementById('observacion').addEventListener('input', function() {
+    const value = this.value.trim();
+    document.getElementById('previewObservacion').textContent = value || 'Sin observaciones';
+    document.getElementById('previewObservacion').className = value ? 'text-gray-900 text-sm' : 'text-gray-600 italic text-sm';
+    
+    // Actualizar contador de caracteres
+    document.getElementById('charCount').textContent = this.value.length;
+});
+
+// Establecer fecha de hoy
+document.getElementById('setToday').addEventListener('click', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha').value = today;
+    document.getElementById('fecha').dispatchEvent(new Event('change'));
+});
+
+// Validación antes de enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mascota = document.getElementById('idmascota').value;
+    const enfermedad = document.getElementById('idenfermedad').value;
+    
+    if (!mascota) {
+        e.preventDefault();
+        alert('Debe seleccionar una mascota.');
+        document.getElementById('idmascota').focus();
+        return false;
+    }
+    
+    if (!enfermedad) {
+        e.preventDefault();
+        alert('Debe seleccionar un tipo de enfermedad.');
+        document.getElementById('idenfermedad').focus();
+        return false;
+    }
+    
+    // Confirmar actualización
+    if (!confirm('¿Está seguro que desea actualizar este registro de enfermedad?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Detectar cambios para mostrar alerta de cambios sin guardar
+let originalData = {
+    mascota: document.getElementById('idmascota').value,
+    enfermedad: document.getElementById('idenfermedad').value,
+    fecha: document.getElementById('fecha').value,
+    observacion: document.getElementById('observacion').value
+};
+
+let hasChanges = false;
+
+function detectChanges() {
+    const currentData = {
+        mascota: document.getElementById('idmascota').value,
+        enfermedad: document.getElementById('idenfermedad').value,
+        fecha: document.getElementById('fecha').value,
+        observacion: document.getElementById('observacion').value
+    };
+    
+    hasChanges = JSON.stringify(originalData) !== JSON.stringify(currentData);
+}
+
+document.getElementById('idmascota').addEventListener('change', detectChanges);
+document.getElementById('idenfermedad').addEventListener('change', detectChanges);
+document.getElementById('fecha').addEventListener('change', detectChanges);
+document.getElementById('observacion').addEventListener('input', detectChanges);
+
+// Alerta antes de salir sin guardar
+window.addEventListener('beforeunload', function(e) {
+    if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Auto-focus en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('idmascota').focus();
+});
+</script>
+{% endblock %}

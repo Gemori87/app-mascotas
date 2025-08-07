@@ -27,4 +27,11 @@ def create_app():
 
     mail.init_app(app)
     
+    # Agregar funciones al contexto de las plantillas
+    from datetime import datetime
+    
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.now}
+    
     return app

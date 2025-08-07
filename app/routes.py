@@ -111,7 +111,6 @@ def crear_primer_admin(persona_id):
 
 
 
-
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -120,24 +119,36 @@ def login():
         if not nombreu or not contrasena:
             flash('Usuario y contraseña son requeridos.', 'error')
             return redirect(url_for('login'))
+
         conn = get_db()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            query = "SELECT u.Idusuario, u.nombreu, p.descripc FROM Usuario u JOIN Perfil p ON u.idperfil = p.Idperfil WHERE u.nombreu = %s AND u.contrasena = %s AND u.estado = TRUE"
-            cursor.execute(query, (nombreu, contrasena))
+            # Primero busca si existe el usuario
+            cursor.execute("SELECT * FROM Usuario WHERE nombreu = %s", (nombreu,))
             user = cursor.fetchone()
-            if user:
-                session.clear()
-                session['user_id'] = user['Idusuario']
-                session['user_name'] = user['nombreu']
-                session['user_profile'] = user['descripc']
-                return redirect(url_for('menu_principal'))
-            else:
-                flash('Usuario o contraseña incorrectos, o el usuario está inactivo.', 'error')
+            if not user:
+                flash('El usuario no se encuentra registrado.', 'error')
+                return redirect(url_for('login'))
+            # Si existe, revisa contraseña y estado
+            if user['contrasena'] != contrasena:
+                flash('Contraseña incorrecta.', 'error')
+                return redirect(url_for('login'))
+            if not user['estado']:
+                flash('El usuario está inactivo.', 'error')
+                return redirect(url_for('login'))
+            # Si todo OK, busca perfil y loguea
+            cursor.execute("SELECT descripc FROM Perfil WHERE Idperfil = %s", (user['idperfil'],))
+            perfil = cursor.fetchone()
+            session.clear()
+            session['user_id'] = user['Idusuario']
+            session['user_name'] = user['nombreu']
+            session['user_profile'] = perfil['descripc'] if perfil else ''
+            return redirect(url_for('menu_principal'))
         else:
             flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('login'))
+            return redirect(url_for('login'))
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
@@ -190,22 +201,33 @@ def editar_persona(id):
 
 @app.route('/persona/inhabilitar/<int:id>')
 def inhabilitar_persona(id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session: 
+        return redirect(url_for('login'))
     conn = get_db()
     if conn:
         cursor = conn.cursor(dictionary=True)
+        # Verifica si tiene usuario activo
         cursor.execute("SELECT Idusuario FROM Usuario WHERE idpersona = %s AND estado = TRUE", (id,))
         if cursor.fetchone():
             flash('No se puede inhabilitar una persona con un usuario activo.', 'error')
         else:
             try:
-                cursor.execute("UPDATE Persona SET estado = NOT estado WHERE Idpersona = %s", (id,))
-                conn.commit()
-                flash('Estado de la persona cambiado correctamente.', 'success')
+                # Consulta estado actual
+                cursor.execute("SELECT estado FROM Persona WHERE Idpersona = %s", (id,))
+                row = cursor.fetchone()
+                if row is not None:
+                    nuevo_estado = not bool(row['estado'])
+                    cursor.execute("UPDATE Persona SET estado = %s WHERE Idpersona = %s", (nuevo_estado, id))
+                    conn.commit()
+                    flash('Estado de la persona cambiado correctamente.', 'success')
+                else:
+                    flash('Persona no encontrada.', 'error')
             except mysql.connector.Error as err:
                 conn.rollback()
                 flash(f'Error al cambiar el estado: {err}', 'error')
     return redirect(url_for('gestion_personas'))
+
+
 
 @app.route('/perfiles')
 def gestion_perfiles():
@@ -300,14 +322,31 @@ def gestion_usuarios():
 
 @app.route('/usuario/crear', methods=['POST'])
 def crear_usuario():
-    if session.get('user_profile') != 'Administrador': return redirect(url_for('login'))
+    if session.get('user_profile') != 'Administrador':
+        return redirect(url_for('login'))
     conn = get_db()
     if conn:
         try:
             cursor = conn.cursor()
             query = "INSERT INTO Usuario (nombreu, contrasena, idpersona, idperfil) VALUES (%s, %s, %s, %s)"
-            cursor.execute(query, (request.form['nombreu'], request.form['contrasena'], request.form['idpersona'], request.form['idperfil']))
+            cursor.execute(query, (
+                request.form['nombreu'],
+                request.form['contrasena'],
+                request.form['idpersona'],
+                request.form['idperfil']
+            ))
             conn.commit()
+            # Obtener correo electrónico de la persona
+            cursor.execute("SELECT correo FROM Persona WHERE Idpersona = %s", (request.form['idpersona'],))
+            persona = cursor.fetchone()
+            correo = persona[0] if persona else None
+            # Enviar el correo solo si hay dirección
+            if correo:
+                enviar_correo_credenciales(
+                    correo, 
+                    request.form['nombreu'], 
+                    request.form['contrasena']
+                )
             flash('Usuario creado exitosamente.', 'success')
         except mysql.connector.Error as err:
             conn.rollback()
@@ -316,6 +355,22 @@ def crear_usuario():
             else:
                 flash(f'Error al crear el usuario: {err}', 'error')
     return redirect(url_for('gestion_usuarios'))
+
+# Función auxiliar para enviar correo
+def enviar_correo_credenciales(correo_destino, usuario, contrasena):
+    from app import mail
+    msg = Message('Tus credenciales de acceso',
+                  sender='tu_correo@gmail.com',
+                  recipients=[correo_destino])
+    msg.body = f"""
+    Hola, tu usuario ha sido creado en el sistema MediPet.
+
+    Usuario: {usuario}
+    Contraseña: {contrasena}
+
+    Por favor, ingresa y cambia tu contraseña después de iniciar sesión.
+    """
+    mail.send(msg)
 
 @app.route('/usuario/editar/<int:id>', methods=['GET', 'POST'])
 def editar_usuario(id):
@@ -449,3 +504,975 @@ def send_email(to, subject, html_body):
         charset='utf-8'   # <<--- LA LÍNEA CLAVE
     )
     mail.send(msg)
+
+
+# ==================== GESTIÓN DE PROCEDIMIENTOS ====================
+
+@app.route('/procedimientos')
+def gestion_procedimientos():
+    """Gestión de tipos de procedimientos"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT * FROM tipoprocedimiento ORDER BY nombre")
+        procedimientos = cursor.fetchall()
+    except mysql.connector.Error as err:
+        flash(f'Error al consultar procedimientos: {err}', 'error')
+        procedimientos = []
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('gestion_procedimientos.html', procedimientos=procedimientos)
+
+
+@app.route('/procedimiento/crear', methods=['POST'])
+def crear_procedimiento():
+    """Crear un nuevo tipo de procedimiento"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    nombre = request.form.get('nombre', '').strip()
+    
+    if not nombre:
+        flash('El nombre del procedimiento es obligatorio.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    cursor = conn.cursor()
+    
+    try:
+        # Verificar si ya existe un procedimiento con el mismo nombre
+        cursor.execute("SELECT Idprocedimiento FROM tipoprocedimiento WHERE nombre = %s", (nombre,))
+        if cursor.fetchone():
+            flash('Ya existe un procedimiento con ese nombre.', 'error')
+            return redirect(url_for('gestion_procedimientos'))
+        
+        # Crear el procedimiento
+        query = "INSERT INTO tipoprocedimiento (nombre, estado) VALUES (%s, 1)"
+        cursor.execute(query, (nombre,))
+        conn.commit()
+        
+        flash('Procedimiento creado exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al crear procedimiento: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('gestion_procedimientos'))
+
+
+@app.route('/procedimiento/editar/<int:id>', methods=['GET', 'POST'])
+def editar_procedimiento(id):
+    """Editar un tipo de procedimiento existente"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        
+        if not nombre:
+            flash('El nombre del procedimiento es obligatorio.', 'error')
+            return redirect(url_for('editar_procedimiento', id=id))
+        
+        try:
+            # Verificar si ya existe otro procedimiento con el mismo nombre
+            cursor.execute("SELECT Idprocedimiento FROM tipoprocedimiento WHERE nombre = %s AND Idprocedimiento != %s", (nombre, id))
+            if cursor.fetchone():
+                flash('Ya existe otro procedimiento con ese nombre.', 'error')
+                return redirect(url_for('editar_procedimiento', id=id))
+            
+            # Actualizar el procedimiento
+            query = "UPDATE tipoprocedimiento SET nombre = %s WHERE Idprocedimiento = %s"
+            cursor.execute(query, (nombre, id))
+            conn.commit()
+            
+            flash('Procedimiento actualizado exitosamente.', 'success')
+            return redirect(url_for('gestion_procedimientos'))
+            
+        except mysql.connector.Error as err:
+            flash(f'Error al actualizar procedimiento: {err}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    # GET: Obtener datos del procedimiento
+    try:
+        cursor.execute("SELECT * FROM tipoprocedimiento WHERE Idprocedimiento = %s", (id,))
+        procedimiento = cursor.fetchone()
+        
+        if not procedimiento:
+            flash('Procedimiento no encontrado.', 'error')
+            return redirect(url_for('gestion_procedimientos'))
+            
+    except mysql.connector.Error as err:
+        flash(f'Error al buscar procedimiento: {err}', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('editar_procedimiento.html', procedimiento=procedimiento)
+
+
+@app.route('/procedimiento/inhabilitar/<int:id>')
+def inhabilitar_procedimiento(id):
+    """Habilitar/deshabilitar tipo de procedimiento"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Solo administradores pueden inhabilitar
+    if session.get('user_profile') != 'Administrador':
+        flash('No tiene permisos para realizar esta acción.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener estado actual
+        cursor.execute("SELECT estado FROM tipoprocedimiento WHERE Idprocedimiento = %s", (id,))
+        procedimiento = cursor.fetchone()
+        
+        if not procedimiento:
+            flash('Procedimiento no encontrado.', 'error')
+            return redirect(url_for('gestion_procedimientos'))
+        
+        # Cambiar estado
+        nuevo_estado = 0 if procedimiento['estado'] else 1
+        cursor.execute("UPDATE tipoprocedimiento SET estado = %s WHERE Idprocedimiento = %s", (nuevo_estado, id))
+        conn.commit()
+        
+        accion = 'habilitado' if nuevo_estado else 'deshabilitado'
+        flash(f'Procedimiento {accion} exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cambiar estado de procedimiento: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('gestion_procedimientos'))
+
+
+@app.route('/procedimiento/ver/<int:id>')
+def ver_procedimiento(id):
+    """Ver detalles de un tipo de procedimiento específico"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT * FROM tipoprocedimiento WHERE Idprocedimiento = %s", (id,))
+        procedimiento = cursor.fetchone()
+        
+        if not procedimiento:
+            flash('Procedimiento no encontrado.', 'error')
+            return redirect(url_for('gestion_procedimientos'))
+            
+    except mysql.connector.Error as err:
+        flash(f'Error al buscar procedimiento: {err}', 'error')
+        return redirect(url_for('gestion_procedimientos'))
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('ver_procedimiento.html', procedimiento=procedimiento)
+
+
+# ==================== GESTIÓN DE PROCEDIMIENTOS DE MASCOTAS ====================
+
+@app.route('/procedimientos-mascotas')
+def gestion_procedimientos_mascotas():
+    """Visualizar lista de procedimientos aplicados a mascotas"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    procedimientos_mascotas = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT 
+                pm.Idregistro,
+                m.nombre as nombre_mascota,
+                tp.nombre as nombre_procedimiento,
+                pm.fecha,
+                pm.observacion,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_veterinario,
+                pm.estado
+            FROM procedimientomascota pm
+            JOIN mascota m ON pm.idmascota = m.Idmascota
+            JOIN tipoprocedimiento tp ON pm.idprocedimiento = tp.Idprocedimiento
+            LEFT JOIN persona p ON pm.idveterinario = p.Idpersona
+            ORDER BY pm.fecha DESC, pm.Idregistro DESC
+        """)
+        procedimientos_mascotas = cursor.fetchall()
+    return render_template('gestion_procedimientos_mascotas.html', procedimientos_mascotas=procedimientos_mascotas)
+
+
+@app.route('/procedimiento-mascota/crear', methods=['GET', 'POST'])
+def crear_procedimiento_mascota():
+    """Crear un nuevo registro de procedimiento para mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        idmascota = request.form['idmascota']
+        idprocedimiento = request.form['idprocedimiento']
+        fecha = request.form['fecha']
+        observacion = request.form.get('observacion', '')
+        idveterinario = request.form.get('idveterinario') or None
+        
+        if not idmascota or not idprocedimiento or not fecha:
+            flash('La mascota, procedimiento y fecha son obligatorios.', 'error')
+            return redirect(url_for('crear_procedimiento_mascota'))
+
+        try:
+            query = """
+                INSERT INTO procedimientomascota (idmascota, idprocedimiento, fecha, observacion, idveterinario, estado)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (idmascota, idprocedimiento, fecha, observacion, idveterinario, True))
+            conn.commit()
+            flash('Procedimiento registrado exitosamente.', 'success')
+            return redirect(url_for('gestion_procedimientos_mascotas'))
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al registrar el procedimiento: {err}', 'error')
+            return redirect(url_for('crear_procedimiento_mascota'))
+    
+    # GET: Cargar datos para formulario
+    try:
+        # Obtener mascotas activas
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = TRUE ORDER BY nombre")
+        mascotas = cursor.fetchall()
+        
+        # Obtener tipos de procedimientos activos
+        cursor.execute("SELECT Idprocedimiento, nombre FROM tipoprocedimiento WHERE estado = TRUE ORDER BY nombre")
+        tipos_procedimientos = cursor.fetchall()
+        
+        # Obtener veterinarios (personas que pueden ser veterinarios)
+        cursor.execute("""
+            SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo 
+            FROM persona 
+            WHERE estado = TRUE 
+            ORDER BY nom1, apell1
+        """)
+        veterinarios = cursor.fetchall()
+        
+        return render_template('crear_procedimiento_mascota.html', 
+                             mascotas=mascotas, 
+                             tipos_procedimientos=tipos_procedimientos, 
+                             veterinarios=veterinarios)
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar los datos: {err}', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+
+
+@app.route('/procedimiento-mascota/editar/<int:id>', methods=['GET', 'POST'])
+def editar_procedimiento_mascota(id):
+    """Editar un registro de procedimiento de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        idmascota = request.form['idmascota']
+        idprocedimiento = request.form['idprocedimiento']
+        fecha = request.form['fecha']
+        observacion = request.form.get('observacion', '')
+        idveterinario = request.form.get('idveterinario') or None
+        
+        if not idmascota or not idprocedimiento or not fecha:
+            flash('La mascota, procedimiento y fecha son obligatorios.', 'error')
+            return redirect(url_for('editar_procedimiento_mascota', id=id))
+
+        try:
+            update_query = """
+                UPDATE procedimientomascota 
+                SET idmascota = %s, idprocedimiento = %s, fecha = %s, observacion = %s, idveterinario = %s
+                WHERE Idregistro = %s
+            """
+            cursor.execute(update_query, (idmascota, idprocedimiento, fecha, observacion, idveterinario, id))
+            conn.commit()
+            flash('Procedimiento actualizado correctamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al actualizar el procedimiento: {err}', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+    
+    # GET: Cargar datos para formulario
+    try:
+        # Obtener el registro actual
+        cursor.execute("SELECT * FROM procedimientomascota WHERE Idregistro = %s", (id,))
+        procedimiento_mascota = cursor.fetchone()
+        
+        if not procedimiento_mascota:
+            flash('Registro no encontrado.', 'error')
+            return redirect(url_for('gestion_procedimientos_mascotas'))
+        
+        # Obtener mascotas activas
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = TRUE ORDER BY nombre")
+        mascotas = cursor.fetchall()
+        
+        # Obtener tipos de procedimientos activos
+        cursor.execute("SELECT Idprocedimiento, nombre FROM tipoprocedimiento WHERE estado = TRUE ORDER BY nombre")
+        tipos_procedimientos = cursor.fetchall()
+        
+        # Obtener veterinarios
+        cursor.execute("""
+            SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo 
+            FROM persona 
+            WHERE estado = TRUE 
+            ORDER BY nom1, apell1
+        """)
+        veterinarios = cursor.fetchall()
+        
+        return render_template('editar_procedimiento_mascota.html', 
+                             procedimiento_mascota=procedimiento_mascota,
+                             mascotas=mascotas, 
+                             tipos_procedimientos=tipos_procedimientos, 
+                             veterinarios=veterinarios)
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar los datos: {err}', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+
+
+@app.route('/procedimiento-mascota/ver/<int:id>')
+def ver_procedimiento_mascota(id):
+    """Ver detalles de un procedimiento aplicado a mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT 
+            pm.*,
+            m.nombre as nombre_mascota,
+            CONCAT(due.nom1, ' ', due.apell1) as nombre_dueno,
+            tp.nombre as nombre_procedimiento,
+            tp.descripcion as descripcion_procedimiento,
+            CONCAT(vet.nom1, ' ', vet.apell1) as nombre_veterinario
+        FROM procedimientomascota pm
+        JOIN mascota m ON pm.idmascota = m.Idmascota
+        JOIN persona due ON m.iddueno = due.Idpersona
+        JOIN tipoprocedimiento tp ON pm.idprocedimiento = tp.Idprocedimiento
+        LEFT JOIN persona vet ON pm.idveterinario = vet.Idpersona
+        WHERE pm.Idregistro = %s
+    """, (id,))
+    
+    procedimiento_mascota = cursor.fetchone()
+    
+    if procedimiento_mascota:
+        return render_template('ver_procedimiento_mascota.html', procedimiento_mascota=procedimiento_mascota)
+    else:
+        flash('Registro no encontrado.', 'error')
+        return redirect(url_for('gestion_procedimientos_mascotas'))
+
+
+@app.route('/procedimiento-mascota/inhabilitar/<int:id>')
+def inhabilitar_procedimiento_mascota(id):
+    """Cambiar estado activo/inactivo de un registro de procedimiento"""
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    conn = get_db()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        try:
+            # Consultar estado actual
+            cursor.execute("SELECT estado FROM procedimientomascota WHERE Idregistro = %s", (id,))
+            row = cursor.fetchone()
+            
+            if row is not None:
+                nuevo_estado = not bool(row['estado'])
+                cursor.execute(
+                    "UPDATE procedimientomascota SET estado = %s WHERE Idregistro = %s", 
+                    (nuevo_estado, id)
+                )
+                conn.commit()
+                estado_texto = "habilitado" if nuevo_estado else "deshabilitado"
+                flash(f'Registro {estado_texto} correctamente.', 'success')
+            else:
+                flash('Registro no encontrado.', 'error')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al cambiar el estado: {err}', 'error')
+    
+    return redirect(url_for('gestion_procedimientos_mascotas'))
+
+
+# ==================== RUTA TEMPORAL PARA DEPURACIÓN ====================
+@app.route('/debug-mascota-table')
+def debug_mascota_table():
+    """Ruta temporal para verificar la estructura de la tabla mascota"""
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    conn = get_db()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            # Mostrar estructura de la tabla mascota
+            cursor.execute("DESCRIBE mascota")
+            columns = cursor.fetchall()
+            
+            # Mostrar algunos registros de ejemplo
+            cursor.execute("SELECT * FROM mascota LIMIT 3")
+            sample_data = cursor.fetchall()
+            
+            result = {
+                'columns': columns,
+                'sample_data': sample_data
+            }
+            
+            flash(f'Estructura de tabla mascota: {result}', 'info')
+        except mysql.connector.Error as err:
+            flash(f'Error al consultar tabla mascota: {err}', 'error')
+    
+    return redirect(url_for('menu_principal'))
+
+
+# ====== GESTIÓN DE ENFERMEDADES ======
+
+@app.route('/enfermedades')
+def gestion_enfermedades():
+    """Gestión de tipos de enfermedades"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener filtros
+    nombre_filtro = request.args.get('nombre', '').strip()
+    estado_filtro = request.args.get('estado', '')
+    
+    # Construir consulta con filtros
+    query = "SELECT * FROM tipoenfermedad WHERE 1=1"
+    params = []
+    
+    if nombre_filtro:
+        query += " AND nombre LIKE %s"
+        params.append(f'%{nombre_filtro}%')
+    
+    if estado_filtro != '':
+        query += " AND estado = %s"
+        params.append(int(estado_filtro))
+    
+    query += " ORDER BY nombre"
+    
+    try:
+        cursor.execute(query, params)
+        enfermedades = cursor.fetchall()
+    except mysql.connector.Error as err:
+        flash(f'Error al consultar enfermedades: {err}', 'error')
+        enfermedades = []
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('gestion_enfermedades.html', enfermedades=enfermedades)
+
+
+@app.route('/enfermedad/crear', methods=['GET', 'POST'])
+def crear_enfermedad():
+    """Crear nueva enfermedad"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        observaciones = request.form.get('observaciones', '').strip()
+        
+        if not nombre:
+            flash('El nombre de la enfermedad es obligatorio.', 'error')
+            return redirect(url_for('crear_enfermedad'))
+        
+        conn = get_db()
+        if not conn:
+            flash('Error de conexión con la base de datos.', 'error')
+            return redirect(url_for('gestion_enfermedades'))
+        
+        cursor = conn.cursor()
+        
+        try:
+            # Verificar si ya existe una enfermedad con el mismo nombre
+            cursor.execute("SELECT Idenfermedad FROM tipoenfermedad WHERE nombre = %s", (nombre,))
+            if cursor.fetchone():
+                flash('Ya existe una enfermedad con ese nombre.', 'error')
+                return redirect(url_for('crear_enfermedad'))
+            
+            # Crear la enfermedad
+            query = """
+                INSERT INTO tipoenfermedad (nombre, observaciones, estado)
+                VALUES (%s, %s, 1)
+            """
+            cursor.execute(query, (nombre, observaciones or None))
+            conn.commit()
+            
+            flash('Enfermedad creada exitosamente.', 'success')
+            return redirect(url_for('gestion_enfermedades'))
+            
+        except mysql.connector.Error as err:
+            flash(f'Error al crear enfermedad: {err}', 'error')
+            return redirect(url_for('crear_enfermedad'))
+        finally:
+            cursor.close()
+            conn.close()
+    
+    return render_template('crear_enfermedad.html')
+
+
+@app.route('/enfermedad/editar/<int:id>', methods=['GET', 'POST'])
+def editar_enfermedad(id):
+    """Editar enfermedad existente"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener la enfermedad actual
+    try:
+        cursor.execute("SELECT * FROM tipoenfermedad WHERE Idenfermedad = %s", (id,))
+        enfermedad = cursor.fetchone()
+        
+        if not enfermedad:
+            flash('Enfermedad no encontrada.', 'error')
+            return redirect(url_for('gestion_enfermedades'))
+    except mysql.connector.Error as err:
+        flash(f'Error al buscar enfermedad: {err}', 'error')
+        return redirect(url_for('gestion_enfermedades'))
+    
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        observaciones = request.form.get('observaciones', '').strip()
+        
+        if not nombre:
+            flash('El nombre de la enfermedad es obligatorio.', 'error')
+            return render_template('editar_enfermedad.html', enfermedad=enfermedad)
+        
+        try:
+            # Verificar si ya existe otra enfermedad con el mismo nombre
+            cursor.execute("SELECT Idenfermedad FROM tipoenfermedad WHERE nombre = %s AND Idenfermedad != %s", (nombre, id))
+            if cursor.fetchone():
+                flash('Ya existe otra enfermedad con ese nombre.', 'error')
+                return render_template('editar_enfermedad.html', enfermedad=enfermedad)
+            
+            # Actualizar la enfermedad
+            query = """
+                UPDATE tipoenfermedad 
+                SET nombre = %s, observaciones = %s
+                WHERE Idenfermedad = %s
+            """
+            cursor.execute(query, (nombre, observaciones or None, id))
+            conn.commit()
+            
+            flash('Enfermedad actualizada exitosamente.', 'success')
+            return redirect(url_for('gestion_enfermedades'))
+            
+        except mysql.connector.Error as err:
+            flash(f'Error al actualizar enfermedad: {err}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.close()
+    conn.close()
+    return render_template('editar_enfermedad.html', enfermedad=enfermedad)
+
+
+@app.route('/enfermedad/inhabilitar/<int:id>')
+def inhabilitar_enfermedad(id):
+    """Habilitar/deshabilitar enfermedad"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Solo administradores pueden inhabilitar
+    if session.get('user_profile') != 'Administrador':
+        flash('No tiene permisos para realizar esta acción.', 'error')
+        return redirect(url_for('gestion_enfermedades'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener estado actual
+        cursor.execute("SELECT estado FROM tipoenfermedad WHERE Idenfermedad = %s", (id,))
+        enfermedad = cursor.fetchone()
+        
+        if not enfermedad:
+            flash('Enfermedad no encontrada.', 'error')
+            return redirect(url_for('gestion_enfermedades'))
+        
+        # Cambiar estado
+        nuevo_estado = 0 if enfermedad['estado'] else 1
+        cursor.execute("UPDATE tipoenfermedad SET estado = %s WHERE Idenfermedad = %s", (nuevo_estado, id))
+        conn.commit()
+        
+        accion = 'habilitada' if nuevo_estado else 'deshabilitada'
+        flash(f'Enfermedad {accion} exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cambiar estado de enfermedad: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('gestion_enfermedades'))
+
+
+# ====== GESTIÓN DE ENFERMEDADES DE MASCOTAS ======
+
+@app.route('/enfermedades-mascotas')
+def gestion_enfermedades_mascotas():
+    """Gestión del historial de enfermedades de mascotas"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener filtros
+    mascota_filtro = request.args.get('mascota', '').strip()
+    enfermedad_filtro = request.args.get('enfermedad', '').strip()
+    fecha_desde = request.args.get('fecha_desde', '').strip()
+    fecha_hasta = request.args.get('fecha_hasta', '').strip()
+    
+    # Construir consulta con filtros
+    query = """
+        SELECT me.id, me.idmascota, me.idenfermedad, me.fecha, me.observacion,
+               m.nombre as nombre_mascota, te.nombre as nombre_enfermedad
+        FROM mascotaenfermedad me
+        JOIN mascota m ON me.idmascota = m.Idmascota
+        JOIN tipoenfermedad te ON me.idenfermedad = te.Idenfermedad
+        WHERE 1=1
+    """
+    params = []
+    
+    if mascota_filtro:
+        query += " AND m.nombre LIKE %s"
+        params.append(f'%{mascota_filtro}%')
+    
+    if enfermedad_filtro:
+        query += " AND te.nombre LIKE %s"
+        params.append(f'%{enfermedad_filtro}%')
+    
+    if fecha_desde:
+        query += " AND me.fecha >= %s"
+        params.append(fecha_desde)
+    
+    if fecha_hasta:
+        query += " AND me.fecha <= %s"
+        params.append(fecha_hasta)
+    
+    query += " ORDER BY me.fecha DESC, m.nombre"
+    
+    try:
+        cursor.execute(query, params)
+        enfermedades_mascotas = cursor.fetchall()
+    except mysql.connector.Error as err:
+        flash(f'Error al consultar enfermedades de mascotas: {err}', 'error')
+        enfermedades_mascotas = []
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('gestion_enfermedades_mascotas.html', enfermedades_mascotas=enfermedades_mascotas)
+
+
+@app.route('/enfermedad-mascota/crear', methods=['GET', 'POST'])
+def crear_enfermedad_mascota():
+    """Registrar nueva enfermedad de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        idmascota = request.form.get('idmascota')
+        idenfermedad = request.form.get('idenfermedad')
+        fecha = request.form.get('fecha')
+        observacion = request.form.get('observacion', '').strip()
+        
+        if not idmascota or not idenfermedad:
+            flash('Mascota y enfermedad son obligatorios.', 'error')
+            return redirect(url_for('crear_enfermedad_mascota'))
+        
+        conn = get_db()
+        if not conn:
+            flash('Error de conexión con la base de datos.', 'error')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+        
+        cursor = conn.cursor()
+        
+        try:
+            # Crear el registro de enfermedad de mascota
+            query = """
+                INSERT INTO mascotaenfermedad (idmascota, idenfermedad, fecha, observacion)
+                VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(query, (idmascota, idenfermedad, fecha or None, observacion or None))
+            conn.commit()
+            
+            flash('Enfermedad de mascota registrada exitosamente.', 'success')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+            
+        except mysql.connector.Error as err:
+            flash(f'Error al registrar enfermedad de mascota: {err}', 'error')
+            return redirect(url_for('crear_enfermedad_mascota'))
+        finally:
+            cursor.close()
+            conn.close()
+    
+    # Obtener datos para el formulario
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener mascotas activas
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1 ORDER BY nombre")
+        mascotas = cursor.fetchall()
+        
+        # Obtener enfermedades activas
+        cursor.execute("SELECT Idenfermedad, nombre FROM tipoenfermedad WHERE estado = 1 ORDER BY nombre")
+        enfermedades = cursor.fetchall()
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        mascotas = []
+        enfermedades = []
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('crear_enfermedad_mascota.html', mascotas=mascotas, enfermedades=enfermedades)
+
+
+@app.route('/enfermedad-mascota/editar/<int:id>', methods=['GET', 'POST'])
+def editar_enfermedad_mascota(id):
+    """Editar registro de enfermedad de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener el registro actual
+    try:
+        cursor.execute("""
+            SELECT me.*, m.nombre as nombre_mascota, te.nombre as nombre_enfermedad
+            FROM mascotaenfermedad me
+            JOIN mascota m ON me.idmascota = m.Idmascota
+            JOIN tipoenfermedad te ON me.idenfermedad = te.Idenfermedad
+            WHERE me.id = %s
+        """, (id,))
+        enfermedad_mascota = cursor.fetchone()
+        
+        if not enfermedad_mascota:
+            flash('Registro no encontrado.', 'error')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+    except mysql.connector.Error as err:
+        flash(f'Error al buscar registro: {err}', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    if request.method == 'POST':
+        idmascota = request.form.get('idmascota')
+        idenfermedad = request.form.get('idenfermedad')
+        fecha = request.form.get('fecha')
+        observacion = request.form.get('observacion', '').strip()
+        
+        if not idmascota or not idenfermedad:
+            flash('Mascota y enfermedad son obligatorios.', 'error')
+        else:
+            try:
+                # Actualizar el registro
+                query = """
+                    UPDATE mascotaenfermedad 
+                    SET idmascota = %s, idenfermedad = %s, fecha = %s, observacion = %s
+                    WHERE id = %s
+                """
+                cursor.execute(query, (idmascota, idenfermedad, fecha or None, observacion or None, id))
+                conn.commit()
+                
+                flash('Registro actualizado exitosamente.', 'success')
+                return redirect(url_for('gestion_enfermedades_mascotas'))
+                
+            except mysql.connector.Error as err:
+                flash(f'Error al actualizar registro: {err}', 'error')
+    
+    # Obtener datos para el formulario
+    try:
+        # Obtener mascotas activas
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1 ORDER BY nombre")
+        mascotas = cursor.fetchall()
+        
+        # Obtener enfermedades activas
+        cursor.execute("SELECT Idenfermedad, nombre FROM tipoenfermedad WHERE estado = 1 ORDER BY nombre")
+        enfermedades = cursor.fetchall()
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        mascotas = []
+        enfermedades = []
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('editar_enfermedad_mascota.html', 
+                         enfermedad_mascota=enfermedad_mascota, 
+                         mascotas=mascotas, 
+                         enfermedades=enfermedades)
+
+
+@app.route('/enfermedad-mascota/ver/<int:id>')
+def ver_enfermedad_mascota(id):
+    """Ver detalles de registro de enfermedad de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT me.*, m.nombre as nombre_mascota, m.raza, m.edad, m.peso,
+                   te.nombre as nombre_enfermedad, te.observaciones as observaciones_enfermedad
+            FROM mascotaenfermedad me
+            JOIN mascota m ON me.idmascota = m.Idmascota
+            JOIN tipoenfermedad te ON me.idenfermedad = te.Idenfermedad
+            WHERE me.id = %s
+        """, (id,))
+        enfermedad_mascota = cursor.fetchone()
+        
+        if not enfermedad_mascota:
+            flash('Registro no encontrado.', 'error')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+            
+    except mysql.connector.Error as err:
+        flash(f'Error al buscar registro: {err}', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return render_template('ver_enfermedad_mascota.html', enfermedad_mascota=enfermedad_mascota)
+
+
+@app.route('/enfermedad-mascota/eliminar/<int:id>')
+def eliminar_enfermedad_mascota(id):
+    """Eliminar registro de enfermedad de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Solo administradores pueden eliminar
+    if session.get('user_profile') != 'Administrador':
+        flash('No tiene permisos para realizar esta acción.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    cursor = conn.cursor()
+    
+    try:
+        # Verificar que existe el registro
+        cursor.execute("SELECT id FROM mascotaenfermedad WHERE id = %s", (id,))
+        if not cursor.fetchone():
+            flash('Registro no encontrado.', 'error')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+        
+        # Eliminar el registro
+        cursor.execute("DELETE FROM mascotaenfermedad WHERE id = %s", (id,))
+        conn.commit()
+        
+        flash('Registro eliminado exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al eliminar registro: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('gestion_enfermedades_mascotas'))

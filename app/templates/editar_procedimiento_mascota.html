@@ -1,0 +1,516 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Procedimiento de Mascota{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Procedimiento de Mascota</h1>
+
+<div class="max-w-3xl mx-auto">
+    <div class="card">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-yellow-600">Modificar Procedimiento Médico</h2>
+            <div class="flex space-x-2">
+                <a href="{{ url_for('ver_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                   class="btn bg-blue-500 hover:bg-blue-600 text-white">
+                    <i class="fas fa-eye"></i> Ver
+                </a>
+                <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        
+        <form method="POST" class="space-y-6">
+            <!-- Información de identificación -->
+            <div class="bg-gray-50 p-4 rounded-md">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">ID del Registro</h3>
+                <p class="text-lg font-bold text-gray-900">#{{ procedimiento.IdProcedimientoMascota }}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Información de la mascota -->
+                <div class="md:col-span-2 bg-blue-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-blue-700 mb-3">
+                        <i class="fas fa-paw"></i> Información de la Mascota
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idmascota" class="block text-sm font-medium text-gray-700 mb-2">
+                                Mascota <span class="text-red-500">*</span>
+                            </label>
+                            <select name="idmascota" id="idmascota" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Seleccione una mascota</option>
+                                {% for mascota in mascotas %}
+                                <option value="{{ mascota.idmascota }}" 
+                                        {% if mascota.idmascota == procedimiento.Idmascota %}selected{% endif %}
+                                        data-especie="{{ mascota.especie }}"
+                                        data-raza="{{ mascota.raza }}"
+                                        data-propietario="{{ mascota.propietario }}">
+                                    {{ mascota.nombre }} - {{ mascota.especie }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Información adicional de la mascota seleccionada -->
+                        <div id="info-mascota">
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <p><strong>Especie:</strong> <span id="mascota-especie">{{ procedimiento.mascota_especie or '-' }}</span></p>
+                                <p><strong>Raza:</strong> <span id="mascota-raza">{{ procedimiento.mascota_raza or '-' }}</span></p>
+                                <p><strong>Propietario:</strong> <span id="mascota-propietario">{{ procedimiento.propietario_nombre or '-' }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información del procedimiento -->
+                <div class="md:col-span-2 bg-green-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-green-700 mb-3">
+                        <i class="fas fa-stethoscope"></i> Información del Procedimiento
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idprocedimiento" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Procedimiento <span class="text-red-500">*</span>
+                            </label>
+                            <select name="idprocedimiento" id="idprocedimiento" required
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                                <option value="">Seleccione un procedimiento</option>
+                                {% for proc in tipos_procedimientos %}
+                                <option value="{{ proc.Idprocedimiento }}" 
+                                        {% if proc.Idprocedimiento == procedimiento.Idprocedimiento %}selected{% endif %}>
+                                    {{ proc.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="fecha" class="block text-sm font-medium text-gray-700 mb-2">
+                                Fecha del Procedimiento <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" name="fecha" id="fecha" required
+                                   value="{{ procedimiento.fecha.strftime('%Y-%m-%d') if procedimiento.fecha else '' }}"
+                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <p class="mt-1 text-xs text-gray-500">No puede ser una fecha futura</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información profesional -->
+                <div class="md:col-span-2 bg-yellow-50 p-4 rounded-md">
+                    <h3 class="text-lg font-medium text-yellow-700 mb-3">
+                        <i class="fas fa-user-md"></i> Información Profesional
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="idveterinario" class="block text-sm font-medium text-gray-700 mb-2">
+                                Veterinario a Cargo
+                            </label>
+                            <select name="idveterinario" id="idveterinario"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                                <option value="">Seleccione un veterinario</option>
+                                {% for vet in veterinarios %}
+                                <option value="{{ vet.idveterinario }}" 
+                                        {% if vet.idveterinario == procedimiento.Idveterinario %}selected{% endif %}>
+                                    {{ vet.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Opcional - Veterinario responsable</p>
+                        </div>
+                        
+                        <div>
+                            <label for="costo" class="block text-sm font-medium text-gray-700 mb-2">
+                                Costo del Procedimiento
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-500">$</span>
+                                <input type="number" name="costo" id="costo" step="0.01" min="0"
+                                       value="{{ procedimiento.costo if procedimiento.costo else '' }}"
+                                       placeholder="0.00"
+                                       class="block w-full pl-8 rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500">
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Opcional - En pesos colombianos</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Descripción y observaciones -->
+                <div class="md:col-span-2">
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción y Observaciones
+                    </label>
+                    <textarea name="descripcion" id="descripcion" rows="4"
+                              placeholder="Describa el procedimiento realizado, observaciones importantes, recomendaciones para el propietario..."
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              maxlength="500">{{ procedimiento.descripcion or '' }}</textarea>
+                    <div class="flex justify-between mt-1">
+                        <p class="text-xs text-gray-500">Opcional - Incluya toda la información relevante</p>
+                        <p id="char-counter" class="text-xs text-gray-500">{{ (procedimiento.descripcion|length) if procedimiento.descripcion else 0 }}/500 caracteres</p>
+                    </div>
+                </div>
+                
+                <!-- Estado actual -->
+                <div class="md:col-span-2 bg-gray-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Estado Actual</h3>
+                    {% if procedimiento.estado %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Activo
+                        </span>
+                        <p class="text-xs text-gray-600 mt-1">Este procedimiento está marcado como activo</p>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Inactivo
+                        </span>
+                        <p class="text-xs text-gray-600 mt-1">Este procedimiento está marcado como inactivo</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="flex justify-end space-x-3 pt-6 border-t">
+                <a href="{{ url_for('ver_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                   class="btn bg-blue-500 hover:bg-blue-600 text-white">
+                    <i class="fas fa-eye"></i> Ver Detalles
+                </a>
+                <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+                <button type="submit" class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                    <i class="fas fa-save"></i> Actualizar Procedimiento
+                </button>
+            </div>
+        </form>
+        
+        <!-- Información adicional -->
+        <div class="mt-6 pt-6 border-t">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Información del sistema -->
+                <div class="bg-blue-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-blue-700 mb-2">
+                        <i class="fas fa-info-circle"></i> Información
+                    </h3>
+                    <ul class="text-xs text-blue-600 space-y-1">
+                        <li>• Los campos marcados con * son obligatorios</li>
+                        <li>• La fecha no puede ser futura</li>
+                        <li>• Los cambios se aplicarán inmediatamente</li>
+                        <li>• Para cambiar el estado, use los botones de acción</li>
+                    </ul>
+                </div>
+                
+                <!-- Acciones rápidas -->
+                <div class="bg-yellow-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-yellow-700 mb-2">
+                        <i class="fas fa-tools"></i> Acciones Rápidas
+                    </h3>
+                    <div class="space-y-2">
+                        {% if session.user_profile == 'Administrador' %}
+                        <a href="{{ url_for('inhabilitar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                           class="block text-xs {{ 'text-red-600 hover:text-red-500' if procedimiento.estado else 'text-green-600 hover:text-green-500' }}"
+                           onclick="return confirm('¿Está seguro que desea {% if procedimiento.estado %}deshabilitar{% else %}habilitar{% endif %} este procedimiento?')">
+                            • {% if procedimiento.estado %}Deshabilitar{% else %}Habilitar{% endif %} procedimiento
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('ver_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                           class="block text-xs text-blue-600 hover:text-blue-500">
+                            • Ver detalles completos
+                        </a>
+                        <a href="{{ url_for('gestion_procedimientos_mascotas') }}" 
+                           class="block text-xs text-gray-600 hover:text-gray-500">
+                            • Volver a la lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mostrar información de la mascota seleccionada
+document.getElementById('idmascota').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (this.value) {
+        document.getElementById('mascota-especie').textContent = selectedOption.dataset.especie || '-';
+        document.getElementById('mascota-raza').textContent = selectedOption.dataset.raza || '-';
+        document.getElementById('mascota-propietario').textContent = selectedOption.dataset.propietario || '-';
+    } else {
+        document.getElementById('mascota-especie').textContent = '-';
+        document.getElementById('mascota-raza').textContent = '-';
+        document.getElementById('mascota-propietario').textContent = '-';
+    }
+});
+
+// Contador de caracteres para descripción
+document.getElementById('descripcion').addEventListener('input', function() {
+    const maxLength = 500;
+    const currentLength = this.value.length;
+    const counter = document.getElementById('char-counter');
+    
+    counter.textContent = `${currentLength}/${maxLength} caracteres`;
+    
+    if (currentLength > maxLength * 0.9) {
+        counter.className = 'text-xs text-red-500';
+    } else if (currentLength > maxLength * 0.7) {
+        counter.className = 'text-xs text-yellow-500';
+    } else {
+        counter.className = 'text-xs text-gray-500';
+    }
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mascota = document.getElementById('idmascota').value;
+    const tipoProcedimiento = document.getElementById('idprocedimiento').value;
+    const fecha = document.getElementById('fecha').value;
+    
+    // Validar campos obligatorios
+    if (!mascota || !tipoProcedimiento || !fecha) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos obligatorios (marcados con *).');
+        return false;
+    }
+    
+    // Validar fecha
+    const fechaSeleccionada = new Date(fecha);
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999); // Fin del día actual
+    
+    if (fechaSeleccionada > hoy) {
+        e.preventDefault();
+        alert('La fecha del procedimiento no puede ser futura.');
+        document.getElementById('fecha').focus();
+        return false;
+    }
+    
+    // Validar costo si se ingresó
+    const costo = document.getElementById('costo').value;
+    if (costo && (isNaN(costo) || parseFloat(costo) < 0)) {
+        e.preventDefault();
+        alert('El costo debe ser un número válido mayor o igual a 0.');
+        document.getElementById('costo').focus();
+        return false;
+    }
+    
+    // Confirmar actualización
+    if (!confirm('¿Está seguro que desea actualizar este procedimiento?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Formateo del costo
+document.getElementById('costo').addEventListener('blur', function() {
+    if (this.value) {
+        const value = parseFloat(this.value);
+        if (!isNaN(value)) {
+            this.value = value.toFixed(2);
+        }
+    }
+});
+
+// Detectar cambios para mostrar alerta de cambios sin guardar
+let originalValues = {};
+let hasChanges = false;
+
+// Guardar valores originales
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = ['idmascota', 'idprocedimiento', 'fecha', 'idveterinario', 'costo', 'descripcion'];
+    inputs.forEach(function(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            originalValues[id] = element.value;
+        }
+    });
+});
+
+// Detectar cambios en los campos
+['idmascota', 'idprocedimiento', 'fecha', 'idveterinario', 'costo', 'descripcion'].forEach(function(id) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener('input', function() {
+            hasChanges = this.value !== originalValues[id];
+        });
+        element.addEventListener('change', function() {
+            hasChanges = this.value !== originalValues[id];
+        });
+    }
+});
+
+// Alerta antes de salir sin guardar
+window.addEventListener('beforeunload', function(e) {
+    if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Configurar fecha máxima
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha');
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.max = today; // No permitir fechas futuras
+});
+
+// Auto-focus en el primer campo editable
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('idmascota').focus();
+});
+
+// Navegación con teclado
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (hasChanges) {
+            if (confirm('¿Está seguro que desea salir sin guardar los cambios?')) {
+                window.location.href = "{{ url_for('gestion_procedimientos_mascotas') }}";
+            }
+        } else {
+            window.location.href = "{{ url_for('gestion_procedimientos_mascotas') }}";
+        }
+    }
+});
+
+// Prevenir envío múltiple del formulario
+let formSubmitted = false;
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (formSubmitted) {
+        e.preventDefault();
+        return false;
+    }
+    formSubmitted = true;
+    
+    // Cambiar el texto del botón
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+    submitBtn.disabled = true;
+    
+    // Si hay error, restaurar el botón
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        formSubmitted = false;
+    }, 3000);
+});
+</script>
+{% endblock %}
+                                    <option value="{{ mascota.Idmascota }}" 
+                                            {% if mascota.Idmascota == procedimiento_mascota.idmascota %}selected{% endif %}>
+                                        {{ mascota.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="idprocedimiento" class="form-label">Tipo de Procedimiento <span class="text-danger">*</span></label>
+                                <select class="form-select" id="idprocedimiento" name="idprocedimiento" required>
+                                    <option value="">Selecciona un procedimiento</option>
+                                    {% for proc in tipos_procedimientos %}
+                                    <option value="{{ proc.Idprocedimiento }}"
+                                            {% if proc.Idprocedimiento == procedimiento_mascota.idprocedimiento %}selected{% endif %}>
+                                        {{ proc.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha" class="form-label">Fecha del Procedimiento <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="fecha" name="fecha" 
+                                       value="{{ procedimiento_mascota.fecha }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="idveterinario" class="form-label">Veterinario</label>
+                                <select class="form-select" id="idveterinario" name="idveterinario">
+                                    <option value="">Selecciona un veterinario (opcional)</option>
+                                    {% for vet in veterinarios %}
+                                    <option value="{{ vet.Idpersona }}"
+                                            {% if vet.Idpersona == procedimiento_mascota.idveterinario %}selected{% endif %}>
+                                        {{ vet.nombre_completo }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="observacion" class="form-label">Observaciones</label>
+                                <textarea class="form-control" id="observacion" name="observacion" 
+                                          rows="4" placeholder="Observaciones del procedimiento, reacciones, recomendaciones..." 
+                                          maxlength="255">{{ procedimiento_mascota.observacion or '' }}</textarea>
+                                <div class="form-text">Máximo 255 caracteres</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Estado</label>
+                                <div class="form-control-plaintext">
+                                    {% if procedimiento_mascota.estado %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">
+                                    Para cambiar el estado, use el botón en la lista de procedimientos
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{{ url_for('gestion_procedimientos_mascotas') }}" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-arrow-left"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Actualizar Procedimiento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Contador de caracteres para observaciones
+document.getElementById('observacion').addEventListener('input', function() {
+    const maxLength = 255;
+    const currentLength = this.value.length;
+    const formText = this.nextElementSibling;
+    formText.textContent = `${currentLength}/${maxLength} caracteres`;
+    
+    if (currentLength > maxLength * 0.9) {
+        formText.classList.add('text-warning');
+    } else {
+        formText.classList.remove('text-warning');
+    }
+});
+
+// Inicializar contador al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('observacion').dispatchEvent(new Event('input'));
+});
+</script>
+{% endblock %}

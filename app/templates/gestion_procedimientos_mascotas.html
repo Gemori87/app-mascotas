@@ -1,0 +1,300 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Procedimientos de Mascotas{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Procedimientos de Mascotas</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Formulario para nuevo procedimiento -->
+    <div class="lg:col-span-4">
+        <div class="card">
+            <h2 class="text-xl font-bold text-blue-600 mb-4">Registrar Nuevo Procedimiento</h2>
+            
+            <form method="POST" action="{{ url_for('crear_procedimiento_mascota') }}" class="space-y-4">
+                <div>
+                    <label for="mascota" class="block text-sm font-medium text-gray-700 mb-2">
+                        Mascota <span class="text-red-500">*</span>
+                    </label>
+                    <select name="mascota" id="mascota" required
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Seleccione una mascota</option>
+                        {% for mascota in mascotas %}
+                        <option value="{{ mascota.idmascota }}">
+                            {{ mascota.nombre }} - {{ mascota.especie }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="tipo_procedimiento" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo de Procedimiento <span class="text-red-500">*</span>
+                    </label>
+                    <select name="tipo_procedimiento" id="tipo_procedimiento" required
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">Seleccione un procedimiento</option>
+                        {% for procedimiento in tipos_procedimientos %}
+                        <option value="{{ procedimiento.Idprocedimiento }}">{{ procedimiento.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="fecha" class="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha del Procedimiento <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="fecha" id="fecha" required
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción/Notas
+                    </label>
+                    <textarea name="descripcion" id="descripcion" rows="3"
+                              placeholder="Detalles del procedimiento, observaciones..."
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              maxlength="250"></textarea>
+                    <p class="mt-1 text-xs text-gray-500">Máximo 250 caracteres</p>
+                </div>
+                
+                <div>
+                    <label for="veterinario" class="block text-sm font-medium text-gray-700 mb-2">
+                        Veterinario
+                    </label>
+                    <input type="text" name="veterinario" id="veterinario"
+                           placeholder="Nombre del veterinario..."
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           maxlength="100">
+                </div>
+                
+                <button type="submit" class="w-full btn bg-blue-500 hover:bg-blue-600 text-white">
+                    <i class="fas fa-plus"></i> Registrar Procedimiento
+                </button>
+            </form>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="card mt-6">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">Filtros de Búsqueda</h3>
+            <div class="space-y-3">
+                <select id="filtro_mascota" class="block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">Todas las mascotas</option>
+                    {% for mascota in mascotas %}
+                    <option value="{{ mascota.idmascota }}">{{ mascota.nombre }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select id="filtro_procedimiento" class="block w-full rounded-md border-gray-300 text-sm">
+                    <option value="">Todos los procedimientos</option>
+                    {% for procedimiento in tipos_procedimientos %}
+                    <option value="{{ procedimiento.Idprocedimiento }}">{{ procedimiento.nombre }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button onclick="limpiarFiltros()" class="w-full btn bg-gray-500 hover:bg-gray-600 text-white text-sm">
+                    <i class="fas fa-eraser"></i> Limpiar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de procedimientos -->
+    <div class="lg:col-span-8">
+        <div class="card">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-blue-600">Historial de Procedimientos</h2>
+                <div class="text-sm text-gray-500">
+                    {{ procedimientos_mascotas|length }} registro(s) encontrado(s)
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Mascota
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Procedimiento
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Fecha
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Veterinario
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for procedimiento in procedimientos_mascotas %}
+                        <tr data-mascota="{{ procedimiento.Idmascota }}" data-procedimiento="{{ procedimiento.Idprocedimiento }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ procedimiento.mascota_nombre }}</div>
+                                    <div class="text-sm text-gray-500">{{ procedimiento.mascota_especie }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    {{ procedimiento.procedimiento_nombre }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ procedimiento.fecha.strftime('%d/%m/%Y') if procedimiento.fecha else 'No especificada' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ procedimiento.veterinario or 'No especificado' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <a href="{{ url_for('ver_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                                       class="text-blue-600 hover:text-blue-900 text-xs">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a href="{{ url_for('editar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                                       class="text-yellow-600 hover:text-yellow-900 text-xs">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    {% if session.user_profile == 'Administrador' %}
+                                    <a href="{{ url_for('eliminar_procedimiento_mascota', id=procedimiento.IdProcedimientoMascota) }}" 
+                                       class="text-red-600 hover:text-red-900 text-xs"
+                                       onclick="return confirm('¿Está seguro que desea eliminar este procedimiento?')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-stethoscope text-4xl mb-2"></i>
+                                    <p>No hay procedimientos registrados</p>
+                                    <p class="text-sm">Use el formulario de la izquierda para registrar un nuevo procedimiento</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Establecer la fecha actual por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha');
+    if (!fechaInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        fechaInput.value = today;
+    }
+});
+
+// Filtros en tiempo real
+document.getElementById('filtro_mascota').addEventListener('change', function() {
+    filtrarTabla();
+});
+
+document.getElementById('filtro_procedimiento').addEventListener('change', function() {
+    filtrarTabla();
+});
+
+function filtrarTabla() {
+    const filtroMascota = document.getElementById('filtro_mascota').value;
+    const filtroProcedimiento = document.getElementById('filtro_procedimiento').value;
+    const filas = document.querySelectorAll('tbody tr[data-mascota]');
+    
+    filas.forEach(function(fila) {
+        const mascotaId = fila.getAttribute('data-mascota');
+        const procedimientoId = fila.getAttribute('data-procedimiento');
+        
+        let mostrar = true;
+        
+        if (filtroMascota && mascotaId !== filtroMascota) {
+            mostrar = false;
+        }
+        
+        if (filtroProcedimiento && procedimientoId !== filtroProcedimiento) {
+            mostrar = false;
+        }
+        
+        fila.style.display = mostrar ? '' : 'none';
+    });
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtro_mascota').value = '';
+    document.getElementById('filtro_procedimiento').value = '';
+    filtrarTabla();
+}
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mascota = document.getElementById('mascota').value;
+    const tipoProcedimiento = document.getElementById('tipo_procedimiento').value;
+    const fecha = document.getElementById('fecha').value;
+    
+    if (!mascota || !tipoProcedimiento || !fecha) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos obligatorios.');
+        return false;
+    }
+    
+    // Validar que la fecha no sea futura
+    const fechaSeleccionada = new Date(fecha);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Reset time to beginning of day
+    
+    if (fechaSeleccionada > hoy) {
+        e.preventDefault();
+        alert('La fecha del procedimiento no puede ser futura.');
+        document.getElementById('fecha').focus();
+        return false;
+    }
+});
+
+// Limpiar formulario después de envío exitoso
+{% if request.method == 'POST' and not errors %}
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('form').reset();
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha').value = today;
+});
+{% endif %}
+
+// Contador de caracteres para descripción
+document.getElementById('descripcion').addEventListener('input', function() {
+    const maxLength = 250;
+    const currentLength = this.value.length;
+    const remaining = maxLength - currentLength;
+    
+    // Buscar o crear el contador
+    let counter = this.parentNode.querySelector('.char-counter');
+    if (!counter) {
+        counter = document.createElement('p');
+        counter.className = 'char-counter mt-1 text-xs';
+        this.parentNode.appendChild(counter);
+    }
+    
+    counter.textContent = `${currentLength}/${maxLength} caracteres`;
+    counter.className = `char-counter mt-1 text-xs ${remaining < 20 ? 'text-red-500' : 'text-gray-500'}`;
+});
+</script>
+{% endblock %}

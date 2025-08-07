@@ -1,0 +1,256 @@
+{% extends "layout.html" %}
+
+{% block title %}Detalle de Enfermedad de Mascota{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Detalle de Enfermedad de Mascota</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Columna de Información del Registro -->
+    <div>
+        <div class="card">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-blue-600">Información del Registro</h2>
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('editar_enfermedad_mascota', id=enfermedad_mascota.id) }}" 
+                       class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{{ url_for('gestion_enfermedades_mascotas') }}" 
+                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-md">
+                        <h3 class="text-sm font-medium text-blue-700 mb-2">ID del Registro</h3>
+                        <p class="text-lg font-bold text-blue-900">#{{ enfermedad_mascota.id }}</p>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-md">
+                        <h3 class="text-sm font-medium text-green-700 mb-2">Fecha de Diagnóstico</h3>
+                        {% if enfermedad_mascota.fecha %}
+                            <p class="text-lg font-bold text-green-900">
+                                {{ enfermedad_mascota.fecha.strftime('%d/%m/%Y') }}
+                            </p>
+                        {% else %}
+                            <p class="text-lg text-gray-500 italic">No especificada</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Enfermedad Diagnosticada</h3>
+                    <p class="text-xl font-bold text-gray-900">{{ enfermedad_mascota.nombre_enfermedad }}</p>
+                    {% if enfermedad_mascota.observaciones_enfermedad %}
+                    <p class="text-sm text-gray-600 mt-2">
+                        <strong>Información general:</strong> {{ enfermedad_mascota.observaciones_enfermedad }}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Observaciones del Diagnóstico</h3>
+                    {% if enfermedad_mascota.observacion %}
+                        <p class="text-gray-900">{{ enfermedad_mascota.observacion }}</p>
+                    {% else %}
+                        <p class="text-gray-500 italic">Sin observaciones específicas registradas</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Columna de Información de la Mascota -->
+    <div>
+        <div class="card">
+            <h2 class="text-xl font-bold text-purple-600 mb-6">Información de la Mascota</h2>
+            
+            <div class="space-y-4">
+                <div class="bg-purple-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-purple-700 mb-2">Nombre</h3>
+                    <p class="text-xl font-bold text-purple-900">{{ enfermedad_mascota.nombre_mascota }}</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    {% if enfermedad_mascota.raza %}
+                    <div class="bg-gray-50 p-4 rounded-md">
+                        <h3 class="text-sm font-medium text-gray-700 mb-1">Raza</h3>
+                        <p class="text-gray-900">{{ enfermedad_mascota.raza }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if enfermedad_mascota.edad %}
+                    <div class="bg-gray-50 p-4 rounded-md">
+                        <h3 class="text-sm font-medium text-gray-700 mb-1">Edad</h3>
+                        <p class="text-gray-900">{{ enfermedad_mascota.edad }} años</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if enfermedad_mascota.peso %}
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-gray-700 mb-1">Peso</h3>
+                    <p class="text-gray-900">{{ enfermedad_mascota.peso }} kg</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Acciones adicionales -->
+            <div class="mt-6 pt-6 border-t">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Acciones Disponibles</h3>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ url_for('editar_enfermedad_mascota', id=enfermedad_mascota.id) }}" 
+                       class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-sm">
+                        <i class="fas fa-edit"></i> Editar Registro
+                    </a>
+                    <a href="{{ url_for('crear_enfermedad_mascota') }}" 
+                       class="btn bg-green-500 hover:bg-green-600 text-white text-sm">
+                        <i class="fas fa-plus"></i> Nuevo Registro
+                    </a>
+                    {% if session.user_profile == 'Administrador' %}
+                    <a href="{{ url_for('eliminar_enfermedad_mascota', id=enfermedad_mascota.id) }}" 
+                       class="btn bg-red-500 hover:bg-red-600 text-white text-sm"
+                       onclick="return confirm('¿Está seguro que desea eliminar este registro? Esta acción no se puede deshacer.')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Información Adicional -->
+<div class="mt-6">
+    <div class="card">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Información Adicional</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Alertas y Recordatorios -->
+            <div class="bg-orange-50 p-4 rounded-md">
+                <h3 class="text-sm font-medium text-orange-700 mb-3">
+                    <i class="fas fa-exclamation-triangle"></i> Recordatorios
+                </h3>
+                <ul class="text-xs text-orange-600 space-y-1">
+                    <li>• Seguimiento veterinario regular</li>
+                    <li>• Observar evolución de síntomas</li>
+                    <li>• Mantener tratamiento prescrito</li>
+                    <li>• Registrar cambios importantes</li>
+                </ul>
+            </div>
+            
+            <!-- Accesos Rápidos -->
+            <div class="bg-blue-50 p-4 rounded-md">
+                <h3 class="text-sm font-medium text-blue-700 mb-3">
+                    <i class="fas fa-external-link-alt"></i> Accesos Rápidos
+                </h3>
+                <div class="space-y-2">
+                    <a href="{{ url_for('gestion_enfermedades_mascotas') }}" 
+                       class="block text-xs text-blue-600 hover:text-blue-500">
+                        • Ver todas las enfermedades
+                    </a>
+                    <a href="{{ url_for('gestion_enfermedades') }}" 
+                       class="block text-xs text-blue-600 hover:text-blue-500">
+                        • Gestionar tipos de enfermedad
+                    </a>
+                    <a href="{{ url_for('crear_enfermedad_mascota') }}" 
+                       class="block text-xs text-blue-600 hover:text-blue-500">
+                        • Registrar nueva enfermedad
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Información del Sistema -->
+            <div class="bg-gray-50 p-4 rounded-md">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">
+                    <i class="fas fa-info-circle"></i> Sistema
+                </h3>
+                <ul class="text-xs text-gray-600 space-y-1">
+                    <li>• Registro ID: {{ enfermedad_mascota.id }}</li>
+                    <li>• Mascota ID: {{ enfermedad_mascota.idmascota }}</li>
+                    <li>• Enfermedad ID: {{ enfermedad_mascota.idenfermedad }}</li>
+                    <li>• Vista en modo lectura</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funcionalidad para imprimir la página
+function printDetails() {
+    window.print();
+}
+
+// Agregar botón de imprimir dinámicamente
+document.addEventListener('DOMContentLoaded', function() {
+    const actionsDiv = document.querySelector('.flex.flex-wrap.gap-2');
+    if (actionsDiv) {
+        const printBtn = document.createElement('a');
+        printBtn.href = '#';
+        printBtn.className = 'btn bg-gray-600 hover:bg-gray-700 text-white text-sm';
+        printBtn.innerHTML = '<i class="fas fa-print"></i> Imprimir';
+        printBtn.onclick = function(e) {
+            e.preventDefault();
+            printDetails();
+        };
+        actionsDiv.appendChild(printBtn);
+    }
+});
+
+// Navegación con teclado
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        window.location.href = "{{ url_for('gestion_enfermedades_mascotas') }}";
+    }
+    if (e.key === 'e' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        window.location.href = "{{ url_for('editar_enfermedad_mascota', id=enfermedad_mascota.id) }}";
+    }
+});
+
+// Tooltip informativo
+document.addEventListener('DOMContentLoaded', function() {
+    const infoElements = document.querySelectorAll('[title]');
+    infoElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            // Agregar efecto visual al hacer hover
+            this.style.transform = 'scale(1.02)';
+            this.style.transition = 'transform 0.2s';
+        });
+        
+        element.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+
+<!-- Estilos para impresión -->
+<style media="print">
+    .btn, .bg-orange-50, .bg-blue-50, .bg-gray-50 {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+    
+    .card {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+    }
+</style>
+{% endblock %}

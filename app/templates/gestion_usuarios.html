@@ -1,6 +1,13 @@
 {% extends "layout.html" %}
 {% block title %}Gestión de Usuarios{% endblock %}
 {% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
 <h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Usuarios</h1>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Columna del Formulario -->

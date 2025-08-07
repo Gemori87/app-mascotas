@@ -1,8 +1,16 @@
 {% extends "layout.html" %}
 {% block title %}Gestión de Personas{% endblock %}
 {% block content %}
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/doc112.jpeg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
 <h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Personas</h1>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
     <!-- Columna del Formulario -->
     <div class="lg:col-span-1">
         <div class="card">
@@ -50,8 +58,12 @@
                 <div>
                     <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
                     <input type="date" name="fecha_nac" id="fecha_nac" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
+                </div>                
+                              
                 <button type="submit" class="w-full btn btn-primary">Guardar Persona</button>
+                <div class="mt-4 text-center">
+                <a href="{{ url_for('gestion_personas') }}" class="btn btn-secondary">Cancelar</a> 
+                </div> 
             </form>
         </div>
     </div>

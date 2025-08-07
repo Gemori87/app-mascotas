@@ -1,16 +1,52 @@
 {% extends "layout.html" %}
 {% block title %}Menú Principal{% endblock %}
 {% block content %}
+<style>
+body {
+    background:
+        linear-gradient(rgba(223, 233, 226, 0.85), rgba(240, 253, 244, 0.92)),
+        url("{{ url_for('static', filename='media/1doc2.jpeg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
 <div class="text-center">
-    <h1 class="text-4xl font-bold text-gray-800 mb-4">Bienvenido a la App de Mascotas</h1>
+    <h1 class="text-4xl font-bold text-gray-800 mb-4">Bienvenido a MediPet</h1>
     <p class="text-lg text-gray-600 mb-8">Gestiona la información de personas, usuarios y perfiles desde aquí.</p>
 </div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto">
     <!-- Tarjeta de Gestión de Personas (Visible para todos los usuarios logueados) -->
     <a href="{{ url_for('gestion_personas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
         <div class="text-6xl mb-4">👤</div>
         <h3 class="text-2xl font-bold text-gray-800">Gestión de Personas</h3>
         <p class="text-gray-600 mt-2">Crear, consultar y administrar personas (dueños, empleados).</p>
+    </a>
+
+    <!-- Tarjeta de Gestión de Procedimientos (Visible para todos los usuarios logueados) -->
+    <a href="{{ url_for('gestion_procedimientos') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🏥</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Procedimientos</h3>
+        <p class="text-gray-600 mt-2">Consultar y administrar los tipos de procedimientos.</p>
+    </a>
+
+    <!-- Tarjeta de Historial de Procedimientos de Mascotas -->
+    <a href="{{ url_for('gestion_procedimientos_mascotas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">📋</div>
+        <h3 class="text-2xl font-bold text-gray-800">Historial de Procedimientos</h3>
+        <p class="text-gray-600 mt-2">Registrar y consultar procedimientos aplicados a mascotas.</p>
+    </a>
+
+    <!-- Tarjeta de Gestión de Enfermedades -->
+    <a href="{{ url_for('gestion_enfermedades') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🦠</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Enfermedades</h3>
+        <p class="text-gray-600 mt-2">Administrar los tipos de enfermedades y condiciones médicas.</p>
+    </a>
+
+    <!-- Tarjeta de Historial de Enfermedades de Mascotas -->
+    <a href="{{ url_for('gestion_enfermedades_mascotas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🩺</div>
+        <h3 class="text-2xl font-bold text-gray-800">Historial de Enfermedades</h3>
+        <p class="text-gray-600 mt-2">Registrar y consultar enfermedades diagnosticadas en mascotas.</p>
     </a>
 
     <!-- Tarjetas solo para Administradores -->

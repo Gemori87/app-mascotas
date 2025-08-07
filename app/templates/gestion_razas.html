@@ -10,7 +10,7 @@
             <form action="{{ url_for('crear_raza') }}" method="POST" class="space-y-4">
                 <div>
                     <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Raza*</label>
-                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" maxlength="50">
+                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" maxlength="50" placeholder="Ej: Golden Retriever, Gato Siamés...">
                 </div>
                 <button type="submit" class="w-full btn btn-primary">Guardar Raza</button>
             </form>

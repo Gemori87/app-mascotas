@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block title %}Gestión de Mascotas{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Mascotas</h1>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna del Formulario -->
+    <div class="lg:col-span-1">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Registrar Nueva Mascota</h2>
+            <form action="{{ url_for('crear_mascota') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="codigo" class="block text-sm font-medium text-gray-700">Código/Chip*</label>
+                    <input type="text" name="codigo" id="codigo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Mascota*</label>
+                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="idduenio" class="block text-sm font-medium text-gray-700">Dueño*</label>
+                    <select name="idduenio" id="idduenio" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Seleccione un dueño...</option>
+                        {% for duenio in duenios %}
+                        <option value="{{ duenio.Idpersona }}">{{ duenio.nom1 }} {{ duenio.apell1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="idraza" class="block text-sm font-medium text-gray-700">Raza*</label>
+                    <select name="idraza" id="idraza" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Seleccione una raza...</option>
+                        {% for raza in razas %}
+                        <option value="{{ raza.Idraza }}">{{ raza.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
+                    <input type="date" name="fecha_nac" id="fecha_nac" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="caracteristicas" class="block text-sm font-medium text-gray-700">Características</label>
+                    <textarea name="caracteristicas" id="caracteristicas" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full btn btn-primary">Guardar Mascota</button>
+            </form>
+        </div>
+    </div>
+    <!-- Columna de la Tabla -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Mascotas Registradas</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Raza</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dueño</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for mascota in mascotas %}
+                        <tr>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.nombre }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.raza_nombre }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.duenio_nombre }}</td>
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                {% if mascota.estado %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <a href="{{ url_for('editar_mascota', id=mascota.Idmascota) }}" class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs">Modificar</a>
+                                <a href="{{ url_for('inhabilitar_mascota', id=mascota.Idmascota) }}" class="btn {{ 'btn-danger' if mascota.estado else 'btn-primary' }} text-xs">
+                                    {{ 'Inhabilitar' if mascota.estado else 'Habilitar' }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay mascotas registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

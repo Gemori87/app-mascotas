@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}Gestión de Razas{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Razas</h1>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Columna del Formulario -->
+    <div class="md:col-span-1">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Crear Nueva Raza</h2>
+            <form action="{{ url_for('crear_raza') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Raza*</label>
+                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" maxlength="50">
+                </div>
+                <button type="submit" class="w-full btn btn-primary">Guardar Raza</button>
+            </form>
+        </div>
+    </div>
+    <!-- Columna de la Tabla -->
+    <div class="md:col-span-2">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Razas Existentes</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for raza in razas %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ raza.Idraza }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ raza.nombre }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if raza.estado %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <a href="{{ url_for('editar_raza', id=raza.Idraza) }}" class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs">Modificar</a>
+                                <a href="{{ url_for('inhabilitar_raza', id=raza.Idraza) }}" class="btn {{ 'btn-danger' if raza.estado else 'btn-primary' }} text-xs">
+                                    {{ 'Inhabilitar' if raza.estado else 'Habilitar' }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-4 text-gray-500">No hay razas registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

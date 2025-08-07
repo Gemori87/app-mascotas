@@ -1476,3 +1476,177 @@ def eliminar_enfermedad_mascota(id):
         conn.close()
     
     return redirect(url_for('gestion_enfermedades_mascotas'))
+
+@app.route('/razas')
+def gestion_razas():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    razas = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM raza ORDER BY nombre ASC")
+        razas = cursor.fetchall()
+    return render_template('gestion_razas.html', razas=razas)
+
+@app.route('/raza/crear', methods=['POST'])
+def crear_raza():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    nombre = request.form['nombre']
+    conn = get_db()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO raza (nombre) VALUES (%s)", (nombre,))
+            conn.commit()
+            flash('Raza creada exitosamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al crear la raza: {err}', 'error')
+    return redirect(url_for('gestion_razas'))
+
+@app.route('/raza/editar/<int:id>', methods=['GET', 'POST'])
+def editar_raza(id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        try:
+            cursor.execute("UPDATE raza SET nombre = %s WHERE Idraza = %s", (nombre, id))
+            conn.commit()
+            flash('Raza actualizada correctamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al actualizar la raza: {err}', 'error')
+        return redirect(url_for('gestion_razas'))
+    
+    cursor.execute("SELECT * FROM raza WHERE Idraza = %s", (id,))
+    raza = cursor.fetchone()
+    if raza:
+        return render_template('editar_raza.html', raza=raza)
+    return redirect(url_for('gestion_razas'))
+
+@app.route('/raza/inhabilitar/<int:id>')
+def inhabilitar_raza(id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        # Aquí se podría añadir una validación para no inhabilitar si hay mascotas de esa raza
+        cursor.execute("UPDATE raza SET estado = NOT estado WHERE Idraza = %s", (id,))
+        conn.commit()
+        flash('Estado de la raza cambiado correctamente.', 'success')
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al cambiar el estado: {err}', 'error')
+    return redirect(url_for('gestion_razas'))
+
+
+# --- GESTIÓN DE MASCOTAS ---
+
+@app.route('/mascotas')
+def gestion_mascotas():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    mascotas = []
+    razas = []
+    duenios = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        # Query para obtener la lista de mascotas con nombres de raza y dueño
+        mascotas_query = """
+            SELECT m.Idmascota, m.nombre, m.estado, r.nombre AS raza_nombre, p.nom1 AS duenio_nombre
+            FROM mascota m
+            JOIN raza r ON m.idraza = r.Idraza
+            JOIN persona p ON m.idduenio = p.Idpersona
+            ORDER BY m.nombre ASC
+        """
+        cursor.execute(mascotas_query)
+        mascotas = cursor.fetchall()
+        
+        # Queries para poblar los dropdowns del formulario de creación
+        cursor.execute("SELECT Idraza, nombre FROM raza WHERE estado = 1 ORDER BY nombre ASC")
+        razas = cursor.fetchall()
+        cursor.execute("SELECT Idpersona, nom1, apell1 FROM persona WHERE estado = 1 ORDER BY nom1 ASC")
+        duenios = cursor.fetchall()
+
+    return render_template('gestion_mascotas.html', mascotas=mascotas, razas=razas, duenios=duenios)
+
+@app.route('/mascota/crear', methods=['POST'])
+def crear_mascota():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        query = """
+            INSERT INTO mascota (codigo, nombre, fecha_nac, caracteristicas, idraza, idduenio)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        fecha_nac = request.form.get('fecha_nac') or None
+        cursor.execute(query, (
+            request.form['codigo'], request.form['nombre'], fecha_nac,
+            request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio']
+        ))
+        conn.commit()
+        flash('Mascota registrada exitosamente.', 'success')
+    except mysql.connector.Error as err:
+        conn.rollback()
+        if err.errno == 1062: # Error de entrada duplicada para el código/chip
+            flash('Error: El código o chip de la mascota ya está registrado.', 'error')
+        else:
+            flash(f'Error al registrar la mascota: {err}', 'error')
+    return redirect(url_for('gestion_mascotas'))
+
+@app.route('/mascota/editar/<int:id>', methods=['GET', 'POST'])
+def editar_mascota(id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        try:
+            query = """
+                UPDATE mascota SET
+                codigo = %s, nombre = %s, fecha_nac = %s, caracteristicas = %s,
+                idraza = %s, idduenio = %s
+                WHERE Idmascota = %s
+            """
+            fecha_nac = request.form.get('fecha_nac') or None
+            cursor.execute(query, (
+                request.form['codigo'], request.form['nombre'], fecha_nac,
+                request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio'], id
+            ))
+            conn.commit()
+            flash('Datos de la mascota actualizados correctamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al actualizar la mascota: {err}', 'error')
+        return redirect(url_for('gestion_mascotas'))
+
+    # Lógica para GET
+    cursor.execute("SELECT * FROM mascota WHERE Idmascota = %s", (id,))
+    mascota = cursor.fetchone()
+    
+    cursor.execute("SELECT Idraza, nombre FROM raza WHERE estado = 1 ORDER BY nombre ASC")
+    razas = cursor.fetchall()
+    
+    cursor.execute("SELECT Idpersona, nom1, apell1 FROM persona WHERE estado = 1 ORDER BY nom1 ASC")
+    duenios = cursor.fetchall()
+
+    if mascota:
+        return render_template('editar_mascota.html', mascota=mascota, razas=razas, duenios=duenios)
+    return redirect(url_for('gestion_mascotas'))
+
+@app.route('/mascota/inhabilitar/<int:id>')
+def inhabilitar_mascota(id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE mascota SET estado = NOT estado WHERE Idmascota = %s", (id,))
+        conn.commit()
+        flash('Estado de la mascota cambiado correctamente.', 'success')
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al cambiar el estado: {err}', 'error')
+    return redirect(url_for('gestion_mascotas'))

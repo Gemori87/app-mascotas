@@ -325,18 +325,50 @@ def gestion_veterinarios():
     if session.get('user_profile') != 'Administrador':
         flash('Acceso no autorizado.', 'error')
         return redirect(url_for('menu_principal'))
+
     conn = get_db()
-    usuarios, personas, perfiles = [], [], []
+    usuarios, personas, perfiles, mascotas = [], [], [], []
+
     if conn:
         cursor = conn.cursor(dictionary=True)
-        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
+
+
+        # Usuarios veterinarios ya registrados
+        query_usuarios = """
+            SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona,
+                   pr.descripc, u.estado
+            FROM Usuario u
+            JOIN Persona pe ON u.idpersona = pe.Idpersona
+            JOIN Perfil pr ON u.idperfil = pr.Idperfil
+            ORDER BY u.Idusuario DESC
+        """
         cursor.execute(query_usuarios)
         usuarios = cursor.fetchall()
-        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
+
+        # Personas sin usuario asignado (para crear nuevos usuarios)
+        cursor.execute("""
+            SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo
+            FROM Persona
+            WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)
+        """)
         personas = cursor.fetchall()
+
+        # Perfiles activos
         cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
         perfiles = cursor.fetchall()
-    return render_template('gestion_veterinarios.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
+
+        # Mascotas activas
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1")
+        mascotas = cursor.fetchall()
+
+    return render_template(
+        'gestion_veterinarios.html',
+        usuarios=usuarios,
+        personas=personas,
+        perfiles=perfiles,
+        mascotas=mascotas
+    )
+
 
 @app.route('/usuarios')
 def gestion_usuarios():
@@ -458,10 +490,6 @@ def inhabilitar_usuario(id):
             conn.rollback()
             flash(f'Error al cambiar el estado del usuario: {err}', 'error')
     return redirect(url_for('gestion_usuarios'))
-
-from flask import render_template, request, redirect, url_for, flash, session, current_app
-import mysql.connector
-from .db import get_db
 
 
 # ... otras rutas ...
@@ -1687,25 +1715,21 @@ def inhabilitar_mascota(id):
         flash(f'Error al cambiar el estado: {err}', 'error')
     return redirect(url_for('gestion_mascotas'))
 
-@app.route('/asignar_mascota', methods=['GET', 'POST'])
+@app.route('/asignar_mascota', methods=['POST'])
 def asignar_mascota():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    idusuario = request.form.get('idusuario')
+    idmascota = request.form.get('idmascota')
+
     conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    # Obtener mascotas activas
-    cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1")
-    mascotas = cursor.fetchall()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE mascota SET idveterinario = %s WHERE Idmascota = %s", (idusuario, idmascota))
+        conn.commit()
+        flash("Mascota asignada exitosamente", "success")
 
-    # Obtener usuarios existentes
-    cursor.execute("""
-        SELECT u.Idusuario, u.nombreu, p.nom1, p.apell1
-        FROM usuario u
-        JOIN persona p ON u.Idpersona = p.Idpersona
-        WHERE u.estado = 1
-    """)
-    usuarios = cursor.fetchall()
+    return redirect(url_for('gestion_veterinarios'))  # <- evita error de template faltante
 
-    return render_template("asignar_mascotas.html", mascotas=mascotas, usuarios=usuarios)
 

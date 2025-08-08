@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ asunto }}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
+    <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <h1 style="color: #333;">Hola, {{ nombre_duenio }}!</h1>
+        <p>Este es un mensaje de <strong>MediPet</strong> para informarte sobre la cita de tu mascota.</p>
+        
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h2 style="color: #0056b3;">Detalles de la Cita:</h2>
+            <p><strong>Mascota:</strong> {{ nombre_mascota }}</p>
+            <p><strong>Fecha:</strong> {{ fecha }}</p>
+            <p><strong>Hora:</strong> {{ hora }}</p>
+            <p><strong>Motivo:</strong> {{ motivo }}</p>
+        </div>
+
+        <p style="margin-top: 20px;">
+            Si necesitas reagendar o cancelar, por favor contáctanos.
+        </p>
+        <p>¡Te esperamos!</p>
+        <p><em>El equipo de MediPet</em></p>
+    </div>
+</body>
+</html>

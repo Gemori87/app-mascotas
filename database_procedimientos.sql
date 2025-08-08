@@ -1,5 +1,4 @@
--- Script SQL para crear las tablas necesarias para el sistema de procedimientos
--- Ejecutar este script en tu base de datos MySQL si las tablas no existen
+
 
 -- Tabla de tipos de procedimientos (catálogo)
 CREATE TABLE IF NOT EXISTS tipoprocedimiento (

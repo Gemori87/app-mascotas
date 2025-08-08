@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, current_app
+from datetime import datetime, timedelta
 import mysql.connector
 import secrets
-import datetime
 from .db import get_db
 from flask_mail import Message
 from app import mail
@@ -1783,3 +1783,146 @@ def asignar_mascota():
     return redirect(url_for('gestion_veterinarios'))  # <- evita error de template faltante
 
 
+@app.route('/citas')
+def gestion_citas():
+    """Muestra el formulario para crear citas y la lista de citas programadas."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Cargar datos para los formularios
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1 ORDER BY nombre")
+        mascotas = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT p.Idpersona, CONCAT(p.nom1, ' ', p.apell1) AS nombre_completo
+            FROM persona p
+            JOIN usuario u ON p.Idpersona = u.Idpersona
+            JOIN perfil pr ON u.idperfil = pr.Idperfil
+            WHERE pr.descripc IN ('Administrador', 'empleado') AND p.estado = 1
+        """)
+        veterinarios = cursor.fetchall()
+
+        # Cargar citas futuras
+        cursor.execute("""
+            SELECT c.Idcita, m.nombre AS nombre_mascota, p_duenio.correo AS duenio_email,
+                   CONCAT(p_vet.nom1, ' ', p_vet.apell1) AS nombre_veterinario,
+                   c.fecha, c.motivo
+            FROM cita c
+            JOIN mascota m ON c.idmascota = m.Idmascota
+            JOIN persona p_duenio ON c.idduenio = p_duenio.Idpersona
+            JOIN persona p_vet ON c.idveterinario = p_vet.Idpersona
+            WHERE c.fecha >= CURDATE() AND c.estado = 1
+            ORDER BY c.fecha ASC
+        """)
+        citas = cursor.fetchall()
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        mascotas, veterinarios, citas = [], [], []
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template('gestion_citas.html', mascotas=mascotas, veterinarios=veterinarios, citas=citas)
+
+
+@app.route('/cita/crear', methods=['POST'])
+def crear_cita():
+    """Crea una nueva cita y envía un correo de confirmación."""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    idmascota = request.form.get('idmascota')
+    idveterinario = request.form.get('idveterinario')
+    fecha_str = request.form.get('fecha')
+    hora_str = request.form.get('hora')
+    motivo = request.form.get('motivo')
+
+    if not all([idmascota, idveterinario, fecha_str, hora_str, motivo]):
+        flash('Todos los campos son obligatorios.', 'error')
+        return redirect(url_for('gestion_citas'))
+
+    fecha_hora_str = f"{fecha_str} {hora_str}"
+    fecha_hora_obj = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M')
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Obtener el id del dueño (idduenio) desde la tabla mascota
+        cursor.execute("SELECT idduenio FROM mascota WHERE Idmascota = %s", (idmascota,))
+        mascota = cursor.fetchone()
+        if not mascota:
+            flash('Mascota no encontrada.', 'error')
+            return redirect(url_for('gestion_citas'))
+        idduenio = mascota['idduenio']
+        
+        # Insertar la cita
+        query = """
+            INSERT INTO cita (idmascota, idduenio, idveterinario, fecha, motivo, estado)
+            VALUES (%s, %s, %s, %s, %s, 1)
+        """
+        cursor.execute(query, (idmascota, idduenio, idveterinario, fecha_hora_obj, motivo))
+        conn.commit()
+        
+        # Enviar correo de confirmación
+        enviar_correo_cita(idmascota, fecha_hora_obj, motivo, "Confirmación de Cita en MediPet")
+        
+        flash('Cita creada y correo de confirmación enviado exitosamente.', 'success')
+
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al crear la cita: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('gestion_citas'))
+
+
+def enviar_correo_cita(idmascota, fecha_hora_obj, motivo, asunto):
+    """Función genérica para enviar correos relacionados con citas."""
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Obtener datos necesarios para el correo
+    cursor.execute("""
+        SELECT m.nombre AS nombre_mascota, p.nom1 AS nombre_duenio, p.correo AS email_duenio
+        FROM mascota m
+        JOIN persona p ON m.idduenio = p.Idpersona
+        WHERE m.Idmascota = %s
+    """, (idmascota,))
+    datos = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not datos or not datos['email_duenio']:
+        print(f"No se pudo enviar correo para mascota ID {idmascota}: sin datos o email.")
+        return
+
+    # Formatear la fecha y hora para el correo
+    fecha_formateada = fecha_hora_obj.strftime('%d de %B de %Y')
+    hora_formateada = fecha_hora_obj.strftime('%I:%M %p')
+
+    # Renderizar el cuerpo del correo desde una plantilla HTML
+    html_body = render_template('email/notificacion_cita.html',
+                                nombre_duenio=datos['nombre_duenio'],
+                                nombre_mascota=datos['nombre_mascota'],
+                                fecha=fecha_formateada,
+                                hora=hora_formateada,
+                                motivo=motivo,
+                                asunto=asunto)
+
+    msg = Message(asunto, recipients=[datos['email_duenio']])
+    msg.html = html_body
+    
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")

@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+{% block title %}Gestión de Citas{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-1">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Programar Nueva Cita</h2>
+            <form action="{{ url_for('crear_cita') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="idmascota" class="block text-sm font-medium text-gray-700">Mascota*</label>
+                    <select name="idmascota" id="idmascota" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Seleccione una mascota...</option>
+                        {% for mascota in mascotas %}
+                        <option value="{{ mascota.Idmascota }}">{{ mascota.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="idveterinario" class="block text-sm font-medium text-gray-700">Veterinario*</label>
+                    <select name="idveterinario" id="idveterinario" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Seleccione un veterinario...</option>
+                        {% for vet in veterinarios %}
+                        <option value="{{ vet.Idpersona }}">{{ vet.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="fecha" class="block text-sm font-medium text-gray-700">Fecha*</label>
+                        <input type="date" name="fecha" id="fecha" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                    <div>
+                        <label for="hora" class="block text-sm font-medium text-gray-700">Hora*</label>
+                        <input type="time" name="hora" id="hora" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo de la Cita*</label>
+                    <textarea name="motivo" id="motivo" rows="3" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full btn btn-primary">Agendar y Notificar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="lg:col-span-2">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">Citas Programadas</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mascota</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha y Hora</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Veterinario</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for cita in citas %}
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ cita.nombre_mascota }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ cita.fecha.strftime('%d/%m/%Y %I:%M %p') }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ cita.nombre_veterinario }}</td>
+                            <td class="px-4 py-3">{{ cita.motivo }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">No hay citas futuras programadas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

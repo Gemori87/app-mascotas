@@ -60,9 +60,9 @@ def crear_persona():
             # Lo redirigimos a una página especial para que cree su cuenta de admin.
             return redirect(url_for('crear_primer_admin', persona_id=new_persona_id))
         else:
-            # Si ya hay administradores, mostramos el mensaje normal.
-            flash('Registro exitoso. Un administrador debe crear su cuenta de usuario para poder ingresar.', 'success')
-            return redirect(url_for('login'))
+            # Si ya hay administradores, regresamos a la gestión de personas.
+            flash('Persona registrada exitosamente. Un administrador debe crear su cuenta de usuario para poder ingresar.', 'success')
+            return redirect(url_for('gestion_personas'))
 
     except mysql.connector.Error as err:
         conn.rollback()

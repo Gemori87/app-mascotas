@@ -1,5 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, current_app
 import mysql.connector
+import secrets
+import datetime
 from .db import get_db
 from flask_mail import Message
 from app import mail
@@ -21,19 +23,20 @@ def crear_persona():
         flash('Error de conexión con la base de datos.', 'error')
         return redirect(url_for('gestion_personas'))
 
-    cursor = conn.cursor(dictionary=True)
-    
-    # 1. Verificar si ya existen administradores
-    cursor.execute("""
-        SELECT COUNT(u.Idusuario) as admin_count
-        FROM Usuario u
-        JOIN Perfil p ON u.idperfil = p.Idperfil
-        WHERE p.descripc = 'Administrador'
-    """)
-    has_admins = cursor.fetchone()['admin_count'] > 0
-    
-    # 2. Intentar crear la persona
+    cursor = None
     try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # 1. Verificar si ya existen administradores
+        cursor.execute("""
+            SELECT COUNT(u.Idusuario) as admin_count
+            FROM Usuario u
+            JOIN Perfil p ON u.idperfil = p.Idperfil
+            WHERE p.descripc = 'Administrador'
+        """)
+        has_admins = cursor.fetchone()['admin_count'] > 0
+        
+        # 2. Intentar crear la persona
         query = """
             INSERT INTO Persona (nom1, nom2, apell1, apell2, direccion, tele, movil, correo, fecha_nac)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -48,6 +51,9 @@ def crear_persona():
         new_persona_id = cursor.lastrowid # Obtenemos el ID de la persona recién creada
         conn.commit()
 
+        cursor.close()
+        conn.close()
+
         # 3. Decidir a dónde redirigir al usuario
         if not has_admins:
             # Si no había administradores, este nuevo usuario será el primero.
@@ -60,6 +66,10 @@ def crear_persona():
 
     except mysql.connector.Error as err:
         conn.rollback()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
         if err.errno == 1062:
             flash('Error: El correo electrónico ya está registrado.', 'error')
         else:
@@ -82,13 +92,16 @@ def crear_primer_admin(persona_id):
             flash('Error de conexión.', 'error')
             return redirect(url_for('crear_primer_admin', persona_id=persona_id))
         
-        cursor = conn.cursor(dictionary=True)
+        cursor = None
         try:
+            cursor = conn.cursor(dictionary=True)
             # Buscamos el ID del perfil 'Administrador'
             cursor.execute("SELECT Idperfil FROM Perfil WHERE descripc = 'Administrador'")
             admin_perfil = cursor.fetchone()
             if not admin_perfil:
                 flash('Error crítico: El perfil "Administrador" no existe en la base de datos.', 'error')
+                cursor.close()
+                conn.close()
                 return redirect(url_for('login'))
 
             # Creamos el usuario
@@ -96,10 +109,16 @@ def crear_primer_admin(persona_id):
             cursor.execute(query, (nombreu, contrasena, persona_id, admin_perfil['Idperfil']))
             conn.commit()
 
+            cursor.close()
+            conn.close()
             flash('¡Cuenta de Administrador creada exitosamente! Ya puedes iniciar sesión.', 'success')
             return redirect(url_for('login'))
         except mysql.connector.Error as err:
             conn.rollback()
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
             if err.errno == 1062:
                 flash('Error: Ese nombre de usuario ya está en uso. Por favor, elige otro.', 'error')
             else:
@@ -121,32 +140,65 @@ def login():
             return redirect(url_for('login'))
 
         conn = get_db()
-        if conn:
+        if not conn:
+            flash('Error de conexión con la base de datos.', 'error')
+            return redirect(url_for('login'))
+        
+        cursor = None
+        try:
             cursor = conn.cursor(dictionary=True)
             # Primero busca si existe el usuario
             cursor.execute("SELECT * FROM Usuario WHERE nombreu = %s", (nombreu,))
             user = cursor.fetchone()
+            
             if not user:
                 flash('El usuario no se encuentra registrado.', 'error')
+                cursor.close()
+                conn.close()
                 return redirect(url_for('login'))
+            
             # Si existe, revisa contraseña y estado
             if user['contrasena'] != contrasena:
                 flash('Contraseña incorrecta.', 'error')
+                cursor.close()
+                conn.close()
                 return redirect(url_for('login'))
+                
             if not user['estado']:
                 flash('El usuario está inactivo.', 'error')
+                cursor.close()
+                conn.close()
                 return redirect(url_for('login'))
+            
             # Si todo OK, busca perfil y loguea
             cursor.execute("SELECT descripc FROM Perfil WHERE Idperfil = %s", (user['idperfil'],))
             perfil = cursor.fetchone()
+            
+            # Configurar sesión
             session.clear()
             session['user_id'] = user['Idusuario']
             session['user_name'] = user['nombreu']
             session['user_profile'] = perfil['descripc'] if perfil else ''
+            
+            cursor.close()
+            conn.close()
             return redirect(url_for('menu_principal'))
-        else:
-            flash('Error de conexión con la base de datos.', 'error')
+            
+        except mysql.connector.Error as err:
+            flash(f'Error de base de datos: {err}', 'error')
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
             return redirect(url_for('login'))
+        except Exception as e:
+            flash(f'Error inesperado: {e}', 'error')
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+            return redirect(url_for('login'))
+    
     return render_template('login.html')
 
 
@@ -508,8 +560,6 @@ def forgot_password():
         cursor_select.close()
 
         if user:
-            import secrets
-            import datetime
             token = secrets.token_urlsafe(32)
             expires = datetime.datetime.now() + datetime.timedelta(hours=1)
 

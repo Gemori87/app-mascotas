@@ -4,102 +4,285 @@
 
 {% block content %}
 <style>
-body {
-    background:
-        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
-    background-size: cover;
-}
+    .container-bg {
+        background-image: url('{{ url_for('static', filename='media/mascota.jpg') }}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+        position: relative;
+    }
+    
+    .container-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.95) 100%);
+        z-index: 1;
+    }
+    
+    .content-wrapper {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .form-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    
+    .preview-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        position: sticky;
+        top: 24px;
+    }
+    
+    .header-title {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .input-field {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(229, 231, 235, 0.7);
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 500;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .input-field:focus {
+        border-color: rgba(14, 165, 233, 0.7);
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1);
+        outline: none;
+        background: rgba(255, 255, 255, 1);
+    }
+    
+    .form-group {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .input-wrapper {
+        position: relative;
+    }
+    
+    .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        font-size: 1.1rem;
+        color: #0ea5e9;
+    }
+    
+    .input-field-with-icon {
+        padding-left: 3rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 1) 0%, rgba(6, 182, 212, 1) 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 0.875rem 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+    
+    .btn-secondary {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.875rem 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+    
+    .preview-section {
+        background: linear-gradient(145deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        backdrop-filter: blur(8px);
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 2px solid rgba(14, 165, 233, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .info-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, rgba(14, 165, 233, 1) 0%, rgba(6, 182, 212, 1) 100%);
+    }
 </style>
 
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Crear Nueva Enfermedad</h1>
+<div class="container-bg">
+    <div class="content-wrapper py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- Header -->
+            <div class="header-title text-center">
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Crear Nueva Enfermedad</h1>
+                <p class="text-gray-600">Registrar información sobre enfermedades veterinarias</p>
+            </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Columna del Formulario -->
-    <div class="lg:col-span-2">
-        <div class="card">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-green-600">Datos de la Enfermedad</h2>
-                <a href="{{ url_for('gestion_enfermedades') }}" 
-                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-            </div>
-            
-            <form method="POST" class="space-y-6">
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre de la Enfermedad <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="nombre" id="nombre" required
-                               placeholder="Ej: Parvovirus, Moquillo, Sarna, etc."
-                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                               maxlength="100">
-                        <p class="mt-1 text-xs text-gray-500">Ingrese el nombre específico de la enfermedad</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Columna del Formulario -->
+                <div class="lg:col-span-2">
+                    <div class="form-card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold text-sky-600 flex items-center">
+                                <i class="fas fa-virus mr-2 text-sky-500"></i>
+                                Datos de la Enfermedad
+                            </h2>
+                            <a href="{{ url_for('gestion_enfermedades') }}" 
+                               class="btn-secondary inline-flex items-center">
+                                <i class="fas fa-arrow-left mr-2"></i> Volver
+                            </a>
+                        </div>
+                        
+                        <form method="POST" class="space-y-6">
+                            <div class="grid grid-cols-1 gap-6">
+                                <div class="form-group">
+                                    <label for="nombre" class="block text-sm font-semibold text-gray-700 mb-3">
+                                        <i class="fas fa-tag mr-2 text-sky-500"></i>
+                                        Nombre de la Enfermedad <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-stethoscope input-icon"></i>
+                                        <input type="text" name="nombre" id="nombre" required
+                                               placeholder="Ej: Parvovirus, Moquillo, Sarna, etc."
+                                               class="input-field input-field-with-icon block w-full py-3 px-4"
+                                               maxlength="100">
+                                    </div>
+                                    <p class="mt-2 text-xs text-gray-500">Ingrese el nombre específico de la enfermedad</p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="observaciones" class="block text-sm font-semibold text-gray-700 mb-3">
+                                        <i class="fas fa-notes-medical mr-2 text-sky-500"></i>
+                                        Observaciones
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="fas fa-clipboard-list input-icon" style="top: 20px;"></i>
+                                        <textarea name="observaciones" id="observaciones" rows="4"
+                                                  placeholder="Descripción adicional, síntomas principales, tratamientos comunes, etc."
+                                                  class="input-field input-field-with-icon block w-full py-3 px-4 resize-none"
+                                                  maxlength="255"></textarea>
+                                    </div>
+                                    <p class="mt-2 text-xs text-gray-500">
+                                        <span id="charCount">0</span>/255 caracteres
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                                <a href="{{ url_for('gestion_enfermedades') }}" 
+                                   class="btn-secondary inline-flex items-center">
+                                    <i class="fas fa-times mr-2"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn-primary inline-flex items-center">
+                                    <i class="fas fa-save mr-2"></i> Crear Enfermedad
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    
-                    <div>
-                        <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-2">
-                            Observaciones
-                        </label>
-                        <textarea name="observaciones" id="observaciones" rows="4"
-                                  placeholder="Descripción adicional, síntomas principales, tratamientos comunes, etc."
-                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                                  maxlength="255"></textarea>
-                        <p class="mt-1 text-xs text-gray-500">
-                            <span id="charCount">0</span>/255 caracteres
-                        </p>
+                </div>
+                
+                <!-- Columna de Vista Previa -->
+                <div class="lg:col-span-1">
+                    <div class="preview-card p-6">
+                        <h3 class="text-lg font-semibold text-sky-600 mb-4 flex items-center">
+                            <i class="fas fa-eye mr-2"></i>
+                            Vista Previa
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="preview-section">
+                                <h4 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-tag mr-2 text-sky-500"></i>
+                                    Nombre
+                                </h4>
+                                <p id="previewNombre" class="text-gray-600 italic font-medium">Ingrese el nombre...</p>
+                            </div>
+                            
+                            <div class="preview-section">
+                                <h4 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-notes-medical mr-2 text-sky-500"></i>
+                                    Observaciones
+                                </h4>
+                                <p id="previewObservaciones" class="text-gray-600 italic text-sm">Sin observaciones</p>
+                            </div>
+                            
+                            <div class="preview-section">
+                                <h4 class="font-semibold text-gray-700 mb-2 flex items-center">
+                                    <i class="fas fa-check-circle mr-2 text-sky-500"></i>
+                                    Estado
+                                </h4>
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                                    <i class="fas fa-circle mr-1"></i>
+                                    Activa
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de ayuda -->
+                        <div class="mt-6 info-box">
+                            <h4 class="text-sm font-semibold text-sky-700 mb-3 flex items-center">
+                                <i class="fas fa-info-circle mr-2"></i> 
+                                Información
+                            </h4>
+                            <ul class="text-xs text-sky-600 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check mr-2 mt-0.5 text-sky-500"></i>
+                                    <span>El nombre debe ser único</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check mr-2 mt-0.5 text-sky-500"></i>
+                                    <span>Las observaciones son opcionales</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check mr-2 mt-0.5 text-sky-500"></i>
+                                    <span>Se creará como activa por defecto</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check mr-2 mt-0.5 text-sky-500"></i>
+                                    <span>Solo administradores pueden desactivar</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="flex justify-end space-x-3 pt-6 border-t">
-                    <a href="{{ url_for('gestion_enfermedades') }}" 
-                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn bg-green-500 hover:bg-green-600 text-white">
-                        <i class="fas fa-save"></i> Crear Enfermedad
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Columna de Vista Previa -->
-    <div class="lg:col-span-1">
-        <div class="card sticky top-6">
-            <h3 class="text-lg font-semibold text-blue-600 mb-4">Vista Previa</h3>
-            
-            <div class="space-y-4">
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Nombre</h4>
-                    <p id="previewNombre" class="text-gray-600 italic">Ingrese el nombre...</p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Observaciones</h4>
-                    <p id="previewObservaciones" class="text-gray-600 italic text-sm">Sin observaciones</p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Estado</h4>
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Activa
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Información de ayuda -->
-            <div class="mt-6 bg-blue-50 p-4 rounded-md">
-                <h4 class="text-sm font-medium text-blue-700 mb-2">
-                    <i class="fas fa-info-circle"></i> Información
-                </h4>
-                <ul class="text-xs text-blue-600 space-y-1">
-                    <li>• El nombre debe ser único</li>
-                    <li>• Las observaciones son opcionales</li>
-                    <li>• Se creará como activa por defecto</li>
-                    <li>• Solo administradores pueden desactivar</li>
-                </ul>
             </div>
         </div>
     </div>

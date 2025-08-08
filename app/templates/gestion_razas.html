@@ -1,60 +1,222 @@
 {% extends "layout.html" %}
 {% block title %}Gestión de Razas{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Razas</h1>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/razas.png') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="text-center mb-8">
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl mx-auto p-4 max-w-5xl border-2 border-slate-200 inline-block">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold filter drop-shadow-2xl">
+            <span class="text-slate-600 drop-shadow-2xl text-shadow-lg">🐕</span>
+            <i class="fas fa-dna mx-2 text-slate-600 drop-shadow-2xl"></i>
+            <span class="bg-gradient-to-r from-slate-700 via-gray-600 to-slate-800 bg-clip-text text-transparent font-black filter drop-shadow-2xl text-shadow-lg">
+                Gestión de Razas
+            </span>
+            <span class="text-gray-600 drop-shadow-2xl text-shadow-lg">🐱</span>
+        </h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 mt-2 font-medium">
+            Registro y administración de razas de mascotas
+        </p>
+    </div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Columna del Formulario -->
-    <div class="md:col-span-1">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Crear Nueva Raza</h2>
-            <form action="{{ url_for('crear_raza') }}" method="POST" class="space-y-4">
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Raza*</label>
-                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" maxlength="50" placeholder="Ej: Golden Retriever, Gato Siamés...">
+    <div class="lg:col-span-1">
+        <div class="bg-white bg-opacity-80 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-slate-300 border-opacity-40 hover:shadow-2xl hover:bg-opacity-90 transition-all duration-300">
+            <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center border-b border-slate-300 pb-2">
+                <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-2 rounded-lg mr-2 shadow-md">
+                    <i class="fas fa-plus text-white text-sm"></i>
                 </div>
-                <button type="submit" class="w-full btn btn-primary">Guardar Raza</button>
+                <span class="bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent font-black">
+                    Crear Nueva Raza
+                </span>
+            </h2>
+            <form action="{{ url_for('crear_raza') }}" method="POST" class="space-y-3">
+                <div class="relative">
+                    <label for="nombre" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-dna mr-1 text-slate-600"></i>
+                        Nombre de la Raza*
+                    </label>
+                    <input type="text" name="nombre" id="nombre" required 
+                           maxlength="50" 
+                           placeholder="Ej: Golden Retriever, Gato Siamés..."
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white bg-opacity-90 
+                                  backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                  text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm
+                                  hover:border-slate-400 hover:bg-opacity-95 focus:bg-opacity-100">
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gradient-to-r from-slate-500 to-gray-600 hover:from-slate-600 hover:to-gray-700 
+                                                 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transform hover:scale-105 
+                                                 transition-all duration-300 flex items-center justify-center text-sm
+                                                 focus:ring-2 focus:ring-slate-300 focus:ring-opacity-50">
+                        <i class="fas fa-save mr-2"></i>
+                        Guardar Raza
+                    </button>
+                </div>
             </form>
+            
+            <!-- Estadísticas compactas -->
+            <div class="mt-4 bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-70 backdrop-blur-sm p-3 rounded-xl border border-slate-300 border-opacity-40 shadow-lg">
+                <h3 class="text-sm font-black text-slate-800 mb-2 flex items-center">
+                    <i class="fas fa-chart-bar text-slate-600 mr-2"></i>
+                    Estadísticas
+                </h3>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-white bg-opacity-80 p-2 rounded-lg shadow-md">
+                        <div class="text-xs font-bold text-slate-700">Total</div>
+                        <div class="text-sm font-black text-slate-800">{{ razas|length }}</div>
+                    </div>
+                    <div class="bg-white bg-opacity-80 p-2 rounded-lg shadow-md">
+                        <div class="text-xs font-bold text-green-700">Activas</div>
+                        <div class="text-sm font-black text-green-800">{{ razas|selectattr('estado')|list|length }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    
     <!-- Columna de la Tabla -->
-    <div class="md:col-span-2">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Razas Existentes</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for raza in razas %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ raza.Idraza }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ raza.nombre }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if raza.estado %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
-                                {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <a href="{{ url_for('editar_raza', id=raza.Idraza) }}" class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs">Modificar</a>
-                                <a href="{{ url_for('inhabilitar_raza', id=raza.Idraza) }}" class="btn {{ 'btn-danger' if raza.estado else 'btn-primary' }} text-xs">
-                                    {{ 'Inhabilitar' if raza.estado else 'Habilitar' }}
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="4" class="text-center py-4 text-gray-500">No hay razas registradas.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="lg:col-span-2">
+        <div class="bg-white bg-opacity-80 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-slate-300 border-opacity-40 hover:shadow-2xl hover:bg-opacity-90 transition-all duration-300">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-300 pb-2">
+                <h2 class="text-lg font-black text-slate-800 flex items-center">
+                    <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-2 rounded-lg mr-2 shadow-md">
+                        <i class="fas fa-list text-white text-sm"></i>
+                    </div>
+                    <span class="bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent">
+                        Razas Existentes
+                    </span>
+                </h2>
+                <div class="bg-gradient-to-r from-slate-100 to-gray-100 bg-opacity-80 backdrop-blur-sm px-3 py-1 rounded-lg border border-slate-300 border-opacity-50 shadow-md">
+                    <span class="text-xs font-bold text-slate-800">
+                        {{ razas|length }} raza(s)
+                    </span>
+                </div>
             </div>
+            
+            {% if razas %}
+            <div class="overflow-hidden rounded-lg shadow-lg border border-slate-300 border-opacity-40">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white bg-opacity-95 backdrop-blur-sm">
+                        <thead class="bg-gradient-to-r from-slate-600 via-gray-600 to-slate-700 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-hashtag mr-2 text-slate-200"></i>
+                                        ID
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-dna mr-2 text-slate-200"></i>
+                                        Nombre
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-toggle-on mr-2 text-slate-200"></i>
+                                        Estado
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center justify-center">
+                                        <i class="fas fa-cogs mr-2 text-slate-200"></i>
+                                        Acciones
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 divide-opacity-50">
+                            {% for raza in razas %}
+                            <tr class="hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-50 hover:bg-opacity-80 transition-all duration-300 group">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-hashtag text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ raza.Idraza }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-dna text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ raza.nombre }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        {% if raza.estado %}
+                                            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Activa
+                                            </div>
+                                        {% else %}
+                                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-times-circle mr-1"></i>
+                                                Inactiva
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('editar_raza', id=raza.Idraza) }}" 
+                                           class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/edit text-xs font-bold">
+                                            <i class="fas fa-edit mr-1 group-hover/edit:rotate-12 transition-transform duration-300"></i>
+                                            Editar
+                                        </a>
+                                        <a href="{{ url_for('inhabilitar_raza', id=raza.Idraza) }}" 
+                                           class="{{ 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800' if raza.estado else 'bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800' }} 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/toggle text-xs font-bold">
+                                            <i class="fas {{ 'fa-ban' if raza.estado else 'fa-check' }} mr-1 group-hover/toggle:rotate-12 transition-transform duration-300"></i>
+                                            {{ 'Inhabilitar' if raza.estado else 'Habilitar' }}
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-8">
+                                    <div class="bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-50 backdrop-blur-sm 
+                                                p-8 rounded-2xl border-2 border-slate-300 border-opacity-30 shadow-lg mx-4">
+                                        <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-4 rounded-full mx-auto mb-4 
+                                                    w-16 h-16 flex items-center justify-center shadow-xl">
+                                            <i class="fas fa-dna text-white text-2xl"></i>
+                                        </div>
+                                        <h3 class="text-lg font-black text-slate-800 mb-2">No hay razas registradas</h3>
+                                        <p class="text-slate-700 font-medium">Comienza registrando la primera raza.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-50 backdrop-blur-sm 
+                            p-12 rounded-3xl border-2 border-slate-300 border-opacity-30 shadow-xl">
+                    <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-6 rounded-full mx-auto mb-6 
+                                w-24 h-24 flex items-center justify-center shadow-2xl">
+                        <i class="fas fa-dna text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-4">No hay razas registradas</h3>
+                    <p class="text-slate-700 text-lg font-medium">Comienza registrando la primera raza usando el formulario.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -6,127 +6,207 @@
 <style>
 body {
     background:
-        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+        url("{{ url_for('static', filename='media/enfermedades.png') }}") center center no-repeat;
     background-size: cover;
 }
 </style>
 
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Enfermedades</h1>
+<div class="text-center mb-8">
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl mx-auto p-4 max-w-5xl border-2 border-red-200 inline-block">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold filter drop-shadow-2xl">
+            <span class="text-red-600 drop-shadow-2xl text-shadow-lg">🦠</span>
+            <i class="fas fa-virus mx-2 text-red-600 drop-shadow-2xl"></i>
+            <span class="bg-gradient-to-r from-red-700 via-red-600 to-red-800 bg-clip-text text-transparent font-black filter drop-shadow-2xl text-shadow-lg">
+                Gestión de Enfermedades
+            </span>
+        </h1>
+    </div>
+</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
     <!-- Columna de Filtros -->
-    <div class="lg:col-span-1">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4 text-blue-600">Filtros de Búsqueda</h2>
-            <form method="GET" class="space-y-4">
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
+    <div class="xl:col-span-1">
+        <div class="bg-white bg-opacity-85 backdrop-blur-xl rounded-xl shadow-2xl p-6 border border-slate-300 border-opacity-40 hover:shadow-3xl transition-all duration-300">
+            <h2 class="text-xl font-bold mb-6 text-slate-800 flex items-center border-b border-slate-200 pb-3">
+                <i class="fas fa-filter mr-3 text-blue-600 bg-blue-100 p-2 rounded-lg"></i>Filtros de Búsqueda
+            </h2>
+            <form method="GET" class="space-y-6">
+                <div class="relative">
+                    <label for="nombre" class="block text-sm font-semibold text-slate-700 mb-2">
+                        <i class="fas fa-tag mr-2 text-blue-500"></i>Nombre de Enfermedad
+                    </label>
                     <input type="text" name="nombre" id="nombre" 
-                           placeholder="Nombre de enfermedad" 
+                           placeholder="Ej: Parvovirus, Rabia, Moquillo..." 
                            value="{{ request.args.get('nombre', '') }}"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                           class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 bg-white bg-opacity-90 
+                                  focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:ring-opacity-50 
+                                  text-slate-900 placeholder-slate-400 shadow-inner transition-all duration-300
+                                  hover:border-slate-300">
+                    <div class="absolute inset-y-0 right-0 pr-3 pt-8 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-slate-400"></i>
+                    </div>
                 </div>
-                <div>
-                    <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                <div class="relative">
+                    <label for="estado" class="block text-sm font-semibold text-slate-700 mb-2">
+                        <i class="fas fa-toggle-on mr-2 text-blue-500"></i>Estado
+                    </label>
                     <select name="estado" id="estado" 
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="">Todos los estados</option>
-                        <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>Activo</option>
-                        <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>Inactivo</option>
+                            class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 bg-white bg-opacity-90 
+                                   focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:ring-opacity-50 
+                                   text-slate-900 shadow-inner transition-all duration-300 hover:border-slate-300">
+                        <option value="">🔍 Todos los estados</option>
+                        <option value="1" {% if request.args.get('estado') == '1' %}selected{% endif %}>✅ Activo</option>
+                        <option value="0" {% if request.args.get('estado') == '0' %}selected{% endif %}>❌ Inactivo</option>
                     </select>
                 </div>
-                <div class="flex space-x-2">
-                    <button type="submit" class="btn bg-blue-500 hover:bg-blue-600 text-white flex-1">
-                        <i class="fas fa-search"></i> Filtrar
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 
+                                                 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 
+                                                 text-white font-bold py-3 px-6 rounded-lg shadow-lg 
+                                                 transform hover:scale-105 transition-all duration-300 
+                                                 focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50">
+                        <i class="fas fa-search mr-2"></i>
+                        <span class="hidden sm:inline">Buscar </span>Enfermedades
                     </button>
                     <a href="{{ url_for('gestion_enfermedades') }}" 
-                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
+                       class="bg-gradient-to-r from-gray-500 via-gray-600 to-gray-700 
+                              hover:from-gray-600 hover:via-gray-700 hover:to-gray-800 
+                              text-white font-bold py-3 px-4 rounded-lg shadow-lg 
+                              transform hover:scale-105 transition-all duration-300 
+                              focus:ring-4 focus:ring-gray-300 focus:ring-opacity-50 text-center">
                         <i class="fas fa-times"></i>
                     </a>
                 </div>
             </form>
             
             <!-- Botón de Crear -->
-            <div class="mt-6">
+            <div class="mt-8 pt-6 border-t border-slate-200">
                 <a href="{{ url_for('crear_enfermedad') }}" 
-                   class="w-full btn bg-green-500 hover:bg-green-600 text-white">
-                    <i class="fas fa-plus"></i> Nueva Enfermedad
+                   class="w-full bg-gradient-to-r from-green-500 via-emerald-600 to-green-700 
+                          hover:from-green-600 hover:via-emerald-700 hover:to-green-800 
+                          text-white font-bold py-4 px-6 rounded-lg shadow-xl 
+                          transform hover:scale-105 transition-all duration-300 
+                          focus:ring-4 focus:ring-green-300 focus:ring-opacity-50 
+                          flex items-center justify-center space-x-3 group">
+                    <i class="fas fa-plus group-hover:rotate-90 transition-transform duration-300"></i>
+                    <span>Nueva Enfermedad</span>
+                    <i class="fas fa-virus text-green-200"></i>
                 </a>
             </div>
             
             <!-- Estadísticas rápidas -->
-            <div class="mt-6 bg-gray-50 p-4 rounded-md">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Estadísticas</h3>
-                <div class="space-y-1 text-xs text-gray-600">
-                    <div>Total registros: <span class="font-semibold">{{ enfermedades|length }}</span></div>
-                    <div>Activas: <span class="font-semibold text-green-600">{{ enfermedades|selectattr('estado')|list|length }}</span></div>
-                    <div>Inactivas: <span class="font-semibold text-red-600">{{ (enfermedades|length) - (enfermedades|selectattr('estado')|list|length) }}</span></div>
+            <div class="mt-8 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 bg-opacity-80 
+                        backdrop-blur-sm p-5 rounded-xl border-2 border-slate-300 border-opacity-30 
+                        shadow-inner">
+                <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-3 text-blue-600 bg-blue-200 p-2 rounded-lg"></i>
+                    Estadísticas Rápidas
+                </h3>
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="bg-white bg-opacity-70 p-3 rounded-lg border border-slate-200 
+                                flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                        <span class="text-sm font-medium text-slate-700">
+                            <i class="fas fa-database mr-2 text-blue-500"></i>Total
+                        </span>
+                        <span class="font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-full">
+                            {{ enfermedades|length }}
+                        </span>
+                    </div>
+                    <div class="bg-white bg-opacity-70 p-3 rounded-lg border border-green-200 
+                                flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                        <span class="text-sm font-medium text-green-700">
+                            <i class="fas fa-check-circle mr-2 text-green-500"></i>Activas
+                        </span>
+                        <span class="font-bold text-green-800 bg-green-100 px-3 py-1 rounded-full">
+                            {{ enfermedades|selectattr('estado')|list|length }}
+                        </span>
+                    </div>
+                    <div class="bg-white bg-opacity-70 p-3 rounded-lg border border-orange-200 
+                                flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+                        <span class="text-sm font-medium text-orange-700">
+                            <i class="fas fa-times-circle mr-2 text-orange-500"></i>Inactivas
+                        </span>
+                        <span class="font-bold text-orange-800 bg-orange-100 px-3 py-1 rounded-full">
+                            {{ (enfermedades|length) - (enfermedades|selectattr('estado')|list|length) }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Columna de la Tabla -->
-    <div class="lg:col-span-3">
-        <div class="card">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-purple-600">Listado de Enfermedades</h2>
-                <div class="text-sm text-gray-500">
-                    {{ enfermedades|length }} enfermedad(es) encontrada(s)
+    <div class="xl:col-span-3">
+        <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-xl shadow-2xl p-6 border border-slate-300 border-opacity-40 hover:shadow-3xl transition-all duration-300">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0 pb-4 border-b border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center">
+                    <i class="fas fa-list-ul mr-3 text-blue-600 bg-blue-100 p-2 rounded-lg"></i>
+                    Listado de Enfermedades
+                </h2>
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 py-2 rounded-full shadow-lg">
+                    <i class="fas fa-database mr-2"></i>
+                    {{ enfermedades|length }} registro(s)
                 </div>
             </div>
             
             {% if enfermedades %}
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-gradient-to-r from-slate-100 to-blue-100 bg-opacity-80">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Observaciones</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">ID</th>
+                            <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Nombre</th>
+                            <th class="hidden md:table-cell px-2 sm:px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Observaciones</th>
+                            <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Estado</th>
+                            <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-white bg-opacity-60 divide-y divide-slate-100">
                         {% for enfermedad in enfermedades %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <tr class="hover:bg-slate-50 hover:bg-opacity-70 transition-colors duration-200">
+                            <td class="px-2 sm:px-4 py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-slate-800">
                                 {{ enfermedad.Idenfermedad }}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ enfermedad.nombre }}</div>
-                            </td>
-                            <td class="px-4 py-4">
-                                <div class="text-sm text-gray-600 max-w-xs truncate">
+                            <td class="px-2 sm:px-4 py-4">
+                                <div class="text-xs sm:text-sm font-medium text-slate-900">{{ enfermedad.nombre }}</div>
+                                <div class="md:hidden text-xs text-slate-600 mt-1">
                                     {{ enfermedad.observaciones or 'Sin observaciones' }}
                                 </div>
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap">
+                            <td class="hidden md:table-cell px-2 sm:px-4 py-4">
+                                <div class="text-sm text-slate-700 max-w-xs truncate">
+                                    {{ enfermedad.observaciones or 'Sin observaciones' }}
+                                </div>
+                            </td>
+                            <td class="px-2 sm:px-4 py-4 whitespace-nowrap">
                                 {% if enfermedad.estado %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        Activa
+                                    <span class="px-1 sm:px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        <span class="hidden sm:inline">Activa</span>
+                                        <span class="sm:hidden">✓</span>
                                     </span>
                                 {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Inactiva
+                                    <span class="px-1 sm:px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                        <span class="hidden sm:inline">Inactiva</span>
+                                        <span class="sm:hidden">✗</span>
                                     </span>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">
-                                <a href="{{ url_for('editar_enfermedad', id=enfermedad.Idenfermedad) }}" 
-                                   class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs" 
-                                   title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% if session.user_profile == 'Administrador' %}
-                                <a href="{{ url_for('inhabilitar_enfermedad', id=enfermedad.Idenfermedad) }}" 
-                                   class="btn {{ 'bg-red-500 hover:bg-red-600' if enfermedad.estado else 'bg-green-500 hover:bg-green-600' }} text-white text-xs"
-                                   title="{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}"
-                                   onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} esta enfermedad?')">
-                                    <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %}"></i>
-                                </a>
-                                {% endif %}
+                            <td class="px-2 sm:px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-1">
+                                    <a href="{{ url_for('editar_enfermedad', id=enfermedad.Idenfermedad) }}" 
+                                       class="btn bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white text-xs p-1 sm:p-2 shadow-md" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if session.user_profile == 'Administrador' %}
+                                    <a href="{{ url_for('inhabilitar_enfermedad', id=enfermedad.Idenfermedad) }}" 
+                                       class="btn {{ 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700' if enfermedad.estado else 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' }} text-white text-xs p-1 sm:p-2 shadow-md"
+                                       title="{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}"
+                                       onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} esta enfermedad?')">
+                                        <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %}"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -135,25 +215,26 @@ body {
             </div>
             
             <!-- Información adicional en la parte inferior -->
-            <div class="mt-4 flex justify-between items-center text-sm text-gray-500 border-t pt-4">
-                <div>
+            <div class="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs sm:text-sm text-slate-600 border-t border-slate-200 pt-4 space-y-2 sm:space-y-0 bg-slate-50 bg-opacity-30 rounded-md px-4 py-3">
+                <div class="font-medium">
                     Mostrando {{ enfermedades|length }} registros
                 </div>
                 <div class="flex space-x-4">
-                    <span>Última actualización: {{ now().strftime('%d/%m/%Y %H:%M') }}</span>
+                    <span class="hidden sm:inline">Última actualización: {{ now().strftime('%d/%m/%Y %H:%M') }}</span>
+                    <span class="sm:hidden">{{ now().strftime('%d/%m/%Y') }}</span>
                 </div>
             </div>
             
             {% else %}
-            <div class="text-center py-12">
-                <div class="mx-auto h-24 w-24 text-gray-400">
-                    <i class="fas fa-virus text-6xl"></i>
+            <div class="text-center py-8 sm:py-12">
+                <div class="mx-auto h-16 w-16 sm:h-24 sm:w-24 text-slate-400">
+                    <i class="fas fa-virus text-4xl sm:text-6xl"></i>
                 </div>
-                <h3 class="mt-4 text-lg font-medium text-gray-900">No hay enfermedades registradas</h3>
-                <p class="mt-2 text-sm text-gray-500">
+                <h3 class="mt-4 text-base sm:text-lg font-medium text-slate-800">No hay enfermedades registradas</h3>
+                <p class="mt-2 text-sm text-slate-600 px-4">
                     {% if request.args %}
                         No se encontraron enfermedades con los filtros aplicados.
-                        <a href="{{ url_for('gestion_enfermedades') }}" class="text-blue-600 hover:text-blue-500">
+                        <a href="{{ url_for('gestion_enfermedades') }}" class="text-blue-700 hover:text-blue-800 font-medium underline">
                             Limpiar filtros
                         </a>
                     {% else %}
@@ -162,8 +243,8 @@ body {
                 </p>
                 <div class="mt-6">
                     <a href="{{ url_for('crear_enfermedad') }}" 
-                       class="btn bg-green-500 hover:bg-green-600 text-white">
-                        <i class="fas fa-plus"></i> Registrar Primera Enfermedad
+                       class="btn bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-sm sm:text-base shadow-lg">
+                        <i class="fas fa-plus"></i> <span class="hidden sm:inline">Registrar Primera </span>Enfermedad
                     </a>
                 </div>
             </div>

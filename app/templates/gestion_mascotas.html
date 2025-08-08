@@ -1,92 +1,326 @@
 {% extends "layout.html" %}
 {% block title %}Gestión de Mascotas{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Mascotas</h1>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<style>
+body {
+    background:
+         url("{{ url_for('static', filename='media/doc6.png') }}") center bottom no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center bottom;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(248, 250, 252, 0.4) 100%),
+        url("{{ url_for('static', filename='media/doc6.png') }}");
+    background-size: cover;
+    background-position: center bottom;
+    background-attachment: fixed;
+    filter: saturate(0.6) brightness(1.1) contrast(0.9);
+    z-index: -1;
+}
+</style>
+
+<div class="text-center mb-8">
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl mx-auto p-4 max-w-5xl border-2 border-slate-200 inline-block">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold filter drop-shadow-2xl">
+            <span class="text-slate-600 drop-shadow-2xl text-shadow-lg">🐕</span>
+            <i class="fas fa-paw mx-2 text-slate-600 drop-shadow-2xl"></i>
+            <span class="bg-gradient-to-r from-slate-700 via-gray-600 to-slate-800 bg-clip-text text-transparent font-black filter drop-shadow-2xl text-shadow-lg">
+                Gestión de Mascotas
+            </span>
+            <span class="text-gray-600 drop-shadow-2xl text-shadow-lg">🐱</span>
+        </h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 mt-2 font-medium">
+            Registro y administración de mascotas
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
     <!-- Columna del Formulario -->
-    <div class="lg:col-span-1">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Registrar Nueva Mascota</h2>
-            <form action="{{ url_for('crear_mascota') }}" method="POST" class="space-y-4">
-                <div>
-                    <label for="codigo" class="block text-sm font-medium text-gray-700">Código/Chip*</label>
-                    <input type="text" name="codigo" id="codigo" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ej: 110010023456">
+    <div class="xl:col-span-1">
+        <div class="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-slate-300 border-opacity-30 hover:shadow-2xl hover:bg-opacity-70 transition-all duration-300">
+            <h2 class="text-lg font-bold mb-4 text-slate-800 flex items-center border-b border-slate-300 border-opacity-50 pb-2">
+                <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-2 rounded-lg mr-2 shadow-md">
+                    <i class="fas fa-plus text-white text-sm"></i>
                 </div>
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Mascota*</label>
-                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ej: Rocky, Luna...">
+                <span class="bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent font-black">
+                    Registrar Nueva Mascota
+                </span>
+            </h2>
+            <form action="{{ url_for('crear_mascota') }}" method="POST" class="space-y-3">
+                <div class="relative">
+                    <label for="codigo" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-microchip mr-1 text-slate-600"></i>
+                        Código/Chip*
+                    </label>
+                    <input type="text" name="codigo" id="codigo" required 
+                           placeholder="Ej: 110010023456" 
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                  backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                  text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm
+                                  hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
                 </div>
-                <div>
-                    <label for="idduenio" class="block text-sm font-medium text-gray-700">Dueño*</label>
-                    <select name="idduenio" id="idduenio" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <div class="relative">
+                    <label for="nombre" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-paw mr-1 text-slate-600"></i>
+                        Nombre de la Mascota*
+                    </label>
+                    <input type="text" name="nombre" id="nombre" required 
+                           placeholder="Ej: Rocky, Luna..." 
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                  backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                  text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm
+                                  hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
+                </div>
+                <div class="relative">
+                    <label for="idduenio" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-user mr-1 text-slate-600"></i>
+                        Dueño*
+                    </label>
+                    <select name="idduenio" id="idduenio" required 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                   backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                   text-gray-900 shadow-md transition-all duration-300 text-sm
+                                   hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
                         <option value="">Seleccione un dueño...</option>
                         {% for duenio in duenios %}
                         <option value="{{ duenio.Idpersona }}">{{ duenio.nom1 }} {{ duenio.apell1 }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label for="idraza" class="block text-sm font-medium text-gray-700">Raza*</label>
-                    <select name="idraza" id="idraza" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <div class="relative">
+                    <label for="idraza" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-dna mr-1 text-slate-600"></i>
+                        Raza*
+                    </label>
+                    <select name="idraza" id="idraza" required 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                   backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                   text-gray-900 shadow-md transition-all duration-300 text-sm
+                                   hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
                         <option value="">Seleccione una raza...</option>
                         {% for raza in razas %}
                         <option value="{{ raza.Idraza }}">{{ raza.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                    <input type="date" name="fecha_nac" id="fecha_nac" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <div class="relative">
+                    <label for="fecha_nac" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-calendar mr-1 text-slate-600"></i>
+                        Fecha de Nacimiento
+                    </label>
+                    <input type="date" name="fecha_nac" id="fecha_nac" 
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                  backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                  text-gray-900 shadow-md transition-all duration-300 text-sm
+                                  hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
                 </div>
-                <div>
-                    <label for="caracteristicas" class="block text-sm font-medium text-gray-700">Características</label>
-                    <textarea name="caracteristicas" id="caracteristicas" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Color, tamaño, señas particulares, etc."></textarea>
+                <div class="relative">
+                    <label for="caracteristicas" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-clipboard-list mr-1 text-slate-600"></i>
+                        Características
+                    </label>
+                    <textarea name="caracteristicas" id="caracteristicas" rows="2" 
+                              placeholder="Color, tamaño, señas particulares, etc."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
+                                     backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
+                                     text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm resize-none
+                                     hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90"></textarea>
                 </div>
-                <button type="submit" class="w-full btn btn-primary">Guardar Mascota</button>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gradient-to-r from-slate-500 to-gray-600 hover:from-slate-600 hover:to-gray-700 
+                                                 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transform hover:scale-105 
+                                                 transition-all duration-300 flex items-center justify-center text-sm
+                                                 focus:ring-2 focus:ring-slate-300 focus:ring-opacity-50">
+                        <i class="fas fa-save mr-2"></i>
+                        Guardar Mascota
+                    </button>
+                </div>
             </form>
+
+            <!-- Estadísticas compactas -->
+            <div class="mt-4 bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-50 backdrop-blur-sm p-3 rounded-xl border border-slate-300 border-opacity-30 shadow-lg">
+                <h3 class="text-sm font-black text-slate-800 mb-2 flex items-center">
+                    <i class="fas fa-chart-bar text-slate-600 mr-2"></i>
+                    Estadísticas
+                </h3>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-white bg-opacity-60 p-2 rounded-lg shadow-md">
+                        <div class="text-xs font-bold text-slate-700">Total</div>
+                        <div class="text-sm font-black text-slate-800">{{ mascotas|length }}</div>
+                    </div>
+                    <div class="bg-white bg-opacity-60 p-2 rounded-lg shadow-md">
+                        <div class="text-xs font-bold text-green-700">Activas</div>
+                        <div class="text-sm font-black text-green-800">{{ mascotas|selectattr('estado')|list|length }}</div>
+                    </div>
+                    <div class="bg-white bg-opacity-60 p-2 rounded-lg shadow-md">
+                        <div class="text-xs font-bold text-red-700">Inactivas</div>
+                        <div class="text-sm font-black text-red-800">{{ (mascotas|length) - (mascotas|selectattr('estado')|list|length) }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Columna de la Tabla -->
     <div class="lg:col-span-2">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Mascotas Registradas</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Raza</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dueño</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for mascota in mascotas %}
-                        <tr>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.nombre }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.raza_nombre }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ mascota.duenio_nombre }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                {% if mascota.estado %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
-                                {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <a href="{{ url_for('editar_mascota', id=mascota.Idmascota) }}" class="btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs">Modificar</a>
-                                <a href="{{ url_for('inhabilitar_mascota', id=mascota.Idmascota) }}" class="btn {{ 'btn-danger' if mascota.estado else 'btn-primary' }} text-xs">
-                                    {{ 'Inhabilitar' if mascota.estado else 'Habilitar' }}
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay mascotas registradas.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-slate-300 border-opacity-30 hover:shadow-2xl hover:bg-opacity-70 transition-all duration-300">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-300 border-opacity-50 pb-2">
+                <h2 class="text-lg font-black text-slate-800 flex items-center">
+                    <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-2 rounded-lg mr-2 shadow-md">
+                        <i class="fas fa-list text-white text-sm"></i>
+                    </div>
+                    <span class="bg-gradient-to-r from-slate-700 to-gray-800 bg-clip-text text-transparent">
+                        Lista de Mascotas
+                    </span>
+                </h2>
+                <div class="bg-gradient-to-r from-slate-100 to-gray-100 bg-opacity-60 backdrop-blur-sm px-3 py-1 rounded-lg border border-slate-300 border-opacity-40 shadow-md">
+                    <span class="text-xs font-bold text-slate-800">
+                        {{ mascotas|length }} mascota(s)
+                    </span>
+                </div>
             </div>
+
+            {% if mascotas %}
+            <div class="overflow-hidden rounded-lg shadow-lg border border-slate-300 border-opacity-30">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white bg-opacity-80 backdrop-blur-sm">
+                        <thead class="bg-gradient-to-r from-slate-600 via-gray-600 to-slate-700 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-paw mr-2 text-slate-200"></i>
+                                        Nombre
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-dna mr-2 text-slate-200"></i>
+                                        Raza
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user mr-2 text-slate-200"></i>
+                                        Dueño
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-toggle-on mr-2 text-slate-200"></i>
+                                        Estado
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                    <div class="flex items-center justify-center">
+                                        <i class="fas fa-cogs mr-2 text-slate-200"></i>
+                                        Acciones
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 divide-opacity-30">
+                            {% for mascota in mascotas %}
+                            <tr class="hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-50 hover:bg-opacity-60 transition-all duration-300 group">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-paw text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ mascota.nombre }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-dna text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ mascota.raza_nombre or 'Sin raza' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-user text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ mascota.duenio_nombre or 'Sin dueño' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        {% if mascota.estado %}
+                                            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Activa
+                                            </div>
+                                        {% else %}
+                                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-times-circle mr-1"></i>
+                                                Inactiva
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('editar_mascota', id=mascota.Idmascota) }}" 
+                                           class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/edit text-xs font-bold">
+                                            <i class="fas fa-edit mr-1 group-hover/edit:rotate-12 transition-transform duration-300"></i>
+                                            Editar
+                                        </a>
+                                        <a href="{{ url_for('inhabilitar_mascota', id=mascota.Idmascota) }}" 
+                                           class="{{ 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800' if mascota.estado else 'bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800' }} 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/toggle text-xs font-bold">
+                                            <i class="fas {{ 'fa-ban' if mascota.estado else 'fa-check' }} mr-1 group-hover/toggle:rotate-12 transition-transform duration-300"></i>
+                                            {{ 'Inhabilitar' if mascota.estado else 'Habilitar' }}
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-8">
+                                    <div class="bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-40 backdrop-blur-sm 
+                                                p-8 rounded-2xl border-2 border-slate-300 border-opacity-20 shadow-lg mx-4">
+                                        <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-4 rounded-full mx-auto mb-4 
+                                                    w-16 h-16 flex items-center justify-center shadow-xl">
+                                            <i class="fas fa-paw text-white text-2xl"></i>
+                                        </div>
+                                        <h3 class="text-lg font-black text-slate-800 mb-2">No hay mascotas registradas</h3>
+                                        <p class="text-slate-700 font-medium">Comienza registrando la primera mascota.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-40 backdrop-blur-sm 
+                            p-12 rounded-3xl border-2 border-slate-300 border-opacity-20 shadow-xl">
+                    <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-6 rounded-full mx-auto mb-6 
+                                w-24 h-24 flex items-center justify-center shadow-2xl">
+                        <i class="fas fa-paw text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-4">No hay mascotas registradas</h3>
+                    <p class="text-slate-700 text-lg font-medium">Comienza registrando tu primera mascota usando el formulario.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

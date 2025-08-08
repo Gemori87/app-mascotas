@@ -6,87 +6,272 @@
 <style>
 body {
     background:
-        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+        url("{{ url_for('static', filename='media/revision.png') }}") center center no-repeat;
     background-size: cover;
 }
 </style>
 
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Medicamentos</h1>
+<div class="text-center mb-8">
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl mx-auto p-4 max-w-5xl border-2 border-green-200 inline-block">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold filter drop-shadow-2xl">
+            <span class="text-green-600 drop-shadow-2xl text-shadow-lg">🏥</span>
+            <i class="fas fa-pills mx-2 text-green-600 drop-shadow-2xl"></i>
+            <span class="bg-gradient-to-r from-green-700 via-green-600 to-emerald-800 bg-clip-text text-transparent font-black filter drop-shadow-2xl text-shadow-lg">
+                Gestión de Medicamentos
+            </span>
+            <span class="text-blue-600 drop-shadow-2xl text-shadow-lg">💊</span>
+        </h1>
+    </div>
+</div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
 
     <!-- Columna del Formulario -->
-    <div class="lg:col-span-1">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Crear Nuevo Medicamento</h2>
+    <div class="xl:col-span-1">
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-300">
+            <h2 class="text-lg font-semibold mb-6 text-gray-800 border-b border-gray-200 pb-3">
+                <i class="fas fa-plus-circle mr-3 text-green-600"></i>
+                Crear Nuevo Medicamento
+            </h2>
             <form action="{{ url_for('gestion_medicamentos') }}" method="POST" class="space-y-4">
                 <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de medicamento*</label>
-                    <input type="text" name="nombre" id="nombre" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-prescription-bottle mr-2 text-green-500"></i>
+                        Nombre de medicamento*
+                    </label>
+                    <input type="text" name="nombre" id="nombre" required 
+                           placeholder="Ej: Amoxicilina, Ibuprofeno..." 
+                           class="w-full px-3 py-2 rounded-md border border-gray-300 
+                                  focus:border-green-500 focus:ring-2 focus:ring-green-200 
+                                  text-gray-900 placeholder-gray-500">
                 </div>
                 <div>
-                    <label for="presentacion" class="block text-sm font-medium text-gray-700">Presentación*</label>
-                    <input type="text" name="presentacion" id="presentacion" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="presentacion" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-box mr-2 text-green-500"></i>
+                        Presentación*
+                    </label>
+                    <input type="text" name="presentacion" id="presentacion" required 
+                           placeholder="Ej: Tabletas 500mg, Jarabe 250ml..." 
+                           class="w-full px-3 py-2 rounded-md border border-gray-300 
+                                  focus:border-green-500 focus:ring-2 focus:ring-green-200 
+                                  text-gray-900 placeholder-gray-500">
                 </div>
                 <div>
-                    <label for="idmascota" class="block text-sm font-medium text-gray-700">Asociar a mascota*</label>
-                    <select name="idmascota" id="idmascota" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <label for="idmascota" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-paw mr-2 text-green-500"></i>
+                        Asociar a mascota*
+                    </label>
+                    <select name="idmascota" id="idmascota" required 
+                            class="w-full px-3 py-2 rounded-md border border-gray-300 
+                                   focus:border-green-500 focus:ring-2 focus:ring-green-200 
+                                   text-gray-900">
                         <option value="">Seleccione una mascota...</option>
                         {% for mascota in mascotas %}
                         <option value="{{ mascota.Idmascota }}">{{ mascota.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <button type="submit" class="w-full btn btn-primary">Guardar medicamento</button>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 
+                                                 text-white font-semibold py-3 px-4 rounded-md 
+                                                 transition-colors duration-200">
+                        <i class="fas fa-save mr-2"></i>
+                        Guardar Medicamento
+                    </button>
+                </div>
             </form>
+
+            <!-- Estadísticas rápidas -->
+            <div class="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="text-base font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-chart-pie mr-2 text-green-600"></i>
+                    Estadísticas
+                </h3>
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="bg-white p-3 rounded border border-gray-200 
+                                flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-600">
+                            <i class="fas fa-database mr-2 text-green-500"></i>Total
+                        </span>
+                        <span class="font-semibold text-gray-800 bg-gray-100 px-3 py-1 rounded">
+                            {{ medicamentos|length }}
+                        </span>
+                    </div>
+                    <div class="bg-white p-3 rounded border border-gray-200 
+                                flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-600">
+                            <i class="fas fa-check-circle mr-2 text-green-500"></i>Activos
+                        </span>
+                        <span class="font-semibold text-green-800 bg-green-100 px-3 py-1 rounded">
+                            {{ medicamentos|selectattr('estado')|list|length }}
+                        </span>
+                    </div>
+                    <div class="bg-white p-3 rounded border border-gray-200 
+                                flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-600">
+                            <i class="fas fa-times-circle mr-2 text-red-500"></i>Inactivos
+                        </span>
+                        <span class="font-semibold text-red-800 bg-red-100 px-3 py-1 rounded">
+                            {{ (medicamentos|length) - (medicamentos|selectattr('estado')|list|length) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Columna de la Tabla -->
-    <div class="lg:col-span-2">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Medicamentos Registrados</h2>
+    <div class="xl:col-span-3">
+        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-300">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 pb-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-list-ul mr-3 text-green-600"></i>
+                    Medicamentos Registrados
+                </h2>
+                <div class="bg-green-600 text-white font-medium px-4 py-2 rounded">
+                    <i class="fas fa-database mr-2"></i>
+                    {{ medicamentos|length }} registro(s)
+                </div>
+            </div>
+            
+            {% if medicamentos %}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Presentación</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                            <th class="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Presentación</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for medicamento in medicamentos %}
-                        <tr>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.Idmedicamento }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.nombre }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ medicamento.presentacion }}</td>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ medicamento.Idmedicamento }}
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    <i class="fas fa-pills mr-2 text-green-500"></i>
+                                    {{ medicamento.nombre }}
+                                </div>
+                                <div class="md:hidden text-xs text-gray-500 mt-1">
+                                    {{ medicamento.presentacion }}
+                                </div>
+                            </td>
+                            <td class="hidden md:table-cell px-4 py-4">
+                                <div class="text-sm text-gray-900">
+                                    <i class="fas fa-box mr-2 text-green-500"></i>
+                                    {{ medicamento.presentacion }}
+                                </div>
+                            </td>
                             <td class="px-4 py-4 whitespace-nowrap">
                                 {% if medicamento.estado %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        <span class="hidden sm:inline">Activo</span>
+                                        <span class="sm:hidden">✓</span>
+                                    </span>
                                 {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        <span class="hidden sm:inline">Inactivo</span>
+                                        <span class="sm:hidden">✗</span>
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                <a href="{{ url_for('editar_medicamento', id=medicamento.Idmedicamento) }}" class="btn bg-blue-500 hover:bg-blue-600 text-white text-xs">Modificar</a>
-                                <a href="{{ url_for('inhabilitar_medicamento', id=medicamento.Idmedicamento) }}" class="btn {{ 'btn-danger' if medicamento.estado else 'btn-primary' }} text-xs">
-                                    {{ 'Inhabilitar' if medicamento.estado else 'Habilitar' }}
-                                </a>
+                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <a href="{{ url_for('editar_medicamento', id=medicamento.Idmedicamento) }}" 
+                                       class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if session.user_profile == 'Administrador' %}
+                                    <a href="{{ url_for('inhabilitar_medicamento', id=medicamento.Idmedicamento) }}" 
+                                       class="{{ 'bg-red-600 hover:bg-red-700' if medicamento.estado else 'bg-green-600 hover:bg-green-700' }} text-white text-xs px-3 py-1 rounded"
+                                       title="{% if medicamento.estado %}Deshabilitar{% else %}Habilitar{% endif %}"
+                                       onclick="return confirm('¿Está seguro que desea {% if medicamento.estado %}deshabilitar{% else %}habilitar{% endif %} este medicamento?')">
+                                        <i class="fas fa-{% if medicamento.estado %}ban{% else %}check{% endif %}"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-gray-500">No hay medicamentos registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Información adicional en la parte inferior -->
+            <div class="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm text-gray-600 border-t border-gray-200 pt-4">
+                <div>
+                    Mostrando {{ medicamentos|length }} registros
+                </div>
+                <div>
+                    <span class="hidden sm:inline">Última actualización: {{ now().strftime('%d/%m/%Y %H:%M') }}</span>
+                    <span class="sm:hidden">{{ now().strftime('%d/%m/%Y') }}</span>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-12">
+                <div class="mx-auto h-16 w-16 text-gray-400 mb-4">
+                    <i class="fas fa-pills text-4xl"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900">No hay medicamentos registrados</h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    Comience registrando el primer medicamento para sus mascotas.
+                </p>
+                <div class="mt-6">
+                    <button onclick="document.getElementById('nombre').focus()" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                        <i class="fas fa-plus mr-2"></i> 
+                        Registrar Medicamento
+                    </button>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
 </div>
+
+<script>
+// Auto-focus en el primer campo del formulario
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('nombre').focus();
+});
+
+// Validación en tiempo real
+function validateForm() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const presentacion = document.getElementById('presentacion').value.trim();
+    const mascota = document.getElementById('idmascota').value;
+    
+    if (nombre && presentacion && mascota) {
+        document.querySelector('button[type="submit"]').disabled = false;
+    } else {
+        document.querySelector('button[type="submit"]').disabled = true;
+    }
+}
+
+// Añadir eventos de validación
+['nombre', 'presentacion', 'idmascota'].forEach(id => {
+    document.getElementById(id).addEventListener('input', validateForm);
+    document.getElementById(id).addEventListener('change', validateForm);
+});
+
+// Confirmar acciones de eliminación con más detalle
+function confirmAction(action, id, name) {
+    return confirm(`¿Está seguro que desea ${action} el medicamento "${name}"?`);
+}
+
+// Animación de éxito al enviar formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+    submitBtn.disabled = true;
+});
+</script>
 {% endblock %}

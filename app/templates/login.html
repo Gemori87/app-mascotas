@@ -1,33 +1,39 @@
 {% extends "layout.html" %}
 {% block title %}Iniciar Sesión{% endblock %}
 {% block content %}
-<div class="flex items-center justify-center min-h-[70vh]">
+<style>
+body {
+    background:
+        url("{{ url_for('static', filename='media/inicio1.png') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+<div class="flex items-center justify-center min-h-[70vh] pr-8">
     <div class="w-full max-w-md">
         <form method="POST" action="{{ url_for('login') }}" 
-              style="background-image: url('{{ url_for('static', filename='media/doc.jpeg') }}'); background-size: cover; background-position: center;" 
-              class="card shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden">
-            
-            <div class="absolute inset-0 bg-black bg-opacity-40"></div>
-            
+              class="card shadow-2xl rounded-2xl p-8 space-y-6 relative overflow-hidden bg-transparent border border-black border-opacity-40">
+
+            <!-- Removida la capa de fondo blanco -->
+
             <div class="relative z-10">
-                <h2 class="text-center text-4xl font-extrabold text-white">Iniciar Sesión</h2>
+                <h2 class="text-center text-4xl font-extrabold text-black drop-shadow-lg">Iniciar Sesión</h2>
                 <div class="mt-8 space-y-4">
                     <div>
-                        <label for="usuario" class="text-lg font-semibold text-white">Usuario</label>
-                        <input id="usuario" name="usuario" type="text" required class="w-full px-4 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <label for="usuario" class="text-lg font-semibold text-white drop-shadow">Usuario</label>
+                        <input id="usuario" name="usuario" type="text" required class="w-full px-4 py-2 mt-1 border border-white border-opacity-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white bg-opacity-20 text-black placeholder-gray-600">
                     </div>
                     <div>
-                        <label for="contrasena" class="text-lg font-semibold text-white">Contraseña</label>
-                        <input id="contrasena" name="contrasena" type="password" required class="w-full px-4 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <label for="contrasena" class="text-lg font-semibold text-white drop-shadow">Contraseña</label>
+                        <input id="contrasena" name="contrasena" type="password" required class="w-full px-4 py-2 mt-1 border border-white border-opacity-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white bg-opacity-20 text-black placeholder-gray-600">
                     </div>
                     <div>
-                        <button type="submit" class="w-full btn btn-primary text-lg mt-4">Ingresar</button>
+                        <button type="submit" class="w-full btn btn-primary text-lg mt-4 bg-green-600 bg-opacity-80 hover:bg-opacity-100 border-none text-white">Ingresar</button>
                     </div>
                 </div>
                 <div class="mt-6 text-center">
-                    <a href="{{ url_for('forgot_password') }}" class="text-sm text-green-200 hover:underline">¿Olvidaste tu contraseña?</a>
-                    <span class="mx-2 text-green-200">|</span>
-                    <a href="{{ url_for('gestion_personas') }}" class="text-sm text-green-200 hover:underline">Registrarse</a>
+                    <a href="{{ url_for('forgot_password') }}" class="text-sm text-black hover:underline drop-shadow">¿Olvidaste tu contraseña?</a>
+                    <span class="mx-2 text-black">|</span>
+                    <a href="{{ url_for('gestion_personas') }}" class="text-sm text-black hover:underline drop-shadow">Registrarse</a>
                 </div>
             </div>
         </form>

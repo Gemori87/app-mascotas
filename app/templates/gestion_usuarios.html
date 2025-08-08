@@ -4,89 +4,278 @@
 <style>
 body {
     background:
-        url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+        url("{{ url_for('static', filename='media/doc3.jpg') }}") center bottom no-repeat;
     background-size: cover;
+    background-attachment: fixed;
+    background-position: center bottom;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(248, 250, 252, 0.4) 100%),
+        url("{{ url_for('static', filename='media/doc3.jpg') }}");
+    background-size: cover;
+    background-position: center bottom;
+    background-attachment: fixed;
+    filter: saturate(0.6) brightness(1.1) contrast(0.9);
+    z-index: -1;
 }
 </style>
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Gestión de Usuarios</h1>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+<div class="text-center mb-8">
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl mx-auto p-4 max-w-5xl border-2 border-slate-200 inline-block">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold filter drop-shadow-2xl">
+            <span class="text-purple-600 drop-shadow-2xl text-shadow-lg">👥</span>
+            <i class="fas fa-users mx-2 text-purple-600 drop-shadow-2xl"></i>
+            <span class="bg-gradient-to-r from-purple-700 via-indigo-600 to-purple-800 bg-clip-text text-transparent font-black filter drop-shadow-2xl text-shadow-lg">
+                Gestión de Usuarios
+            </span>
+            <span class="text-indigo-600 drop-shadow-2xl text-shadow-lg">🔐</span>
+        </h1>
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 mt-2 font-medium">
+            Administración de usuarios y perfiles del sistema
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mx-4">
     <!-- Columna del Formulario -->
     <div class="lg:col-span-1">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Crear Nuevo Usuario</h2>
-            <form action="{{ url_for('crear_usuario') }}" method="POST" class="space-y-4">
-                <div>
-                    <label for="nombreu" class="block text-sm font-medium text-gray-700">Nombre de Usuario*</label>
-                    <input type="text" name="nombreu" id="nombreu" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+        <div class="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-purple-300 border-opacity-30 hover:shadow-2xl hover:bg-opacity-70 transition-all duration-300">
+            <h2 class="text-lg font-bold mb-4 text-purple-800 flex items-center border-b border-purple-300 border-opacity-50 pb-2">
+                <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-2 rounded-lg mr-2 shadow-md">
+                    <i class="fas fa-user-plus text-white text-sm"></i>
                 </div>
-                <div>
-                    <label for="contrasena" class="block text-sm font-medium text-gray-700">Contraseña*</label>
-                    <input type="password" name="contrasena" id="contrasena" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <span class="bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent font-black">
+                    Crear Nuevo Usuario
+                </span>
+            </h2>
+            <form action="{{ url_for('crear_usuario') }}" method="POST" class="space-y-3">
+                <div class="relative">
+                    <label for="nombreu" class="block text-xs font-bold text-purple-700 mb-1">
+                        <i class="fas fa-user mr-1 text-purple-600"></i>
+                        Nombre de Usuario*
+                    </label>
+                    <input type="text" name="nombreu" id="nombreu" required 
+                           placeholder="Ej: admin, veterinario1..."
+                           class="w-full px-3 py-2 rounded-lg border border-purple-300 border-opacity-50 bg-white bg-opacity-70 
+                                  backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50 
+                                  text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm
+                                  hover:border-purple-400 hover:bg-opacity-80 focus:bg-opacity-90">
                 </div>
-                <div>
-                    <label for="idpersona" class="block text-sm font-medium text-gray-700">Asociar a Persona*</label>
-                    <select name="idpersona" id="idpersona" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <div class="relative">
+                    <label for="contrasena" class="block text-xs font-bold text-purple-700 mb-1">
+                        <i class="fas fa-lock mr-1 text-purple-600"></i>
+                        Contraseña*
+                    </label>
+                    <input type="password" name="contrasena" id="contrasena" required 
+                           placeholder="Contraseña segura..."
+                           class="w-full px-3 py-2 rounded-lg border border-purple-300 border-opacity-50 bg-white bg-opacity-70 
+                                  backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50 
+                                  text-gray-900 placeholder-gray-500 shadow-md transition-all duration-300 text-sm
+                                  hover:border-purple-400 hover:bg-opacity-80 focus:bg-opacity-90">
+                </div>
+                <div class="relative">
+                    <label for="idpersona" class="block text-xs font-bold text-purple-700 mb-1">
+                        <i class="fas fa-id-card mr-1 text-purple-600"></i>
+                        Asociar a Persona*
+                    </label>
+                    <select name="idpersona" id="idpersona" required 
+                            class="w-full px-3 py-2 rounded-lg border border-purple-300 border-opacity-50 bg-white bg-opacity-70 
+                                   backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50 
+                                   text-gray-900 shadow-md transition-all duration-300 text-sm
+                                   hover:border-purple-400 hover:bg-opacity-80 focus:bg-opacity-90">
                         <option value="">Seleccione una persona...</option>
                         {% for persona in personas %}
                         <option value="{{ persona.Idpersona }}">{{ persona.nombre_completo }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div>
-                    <label for="idperfil" class="block text-sm font-medium text-gray-700">Asignar Perfil*</label>
-                    <select name="idperfil" id="idperfil" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <div class="relative">
+                    <label for="idperfil" class="block text-xs font-bold text-purple-700 mb-1">
+                        <i class="fas fa-user-tag mr-1 text-purple-600"></i>
+                        Asignar Perfil*
+                    </label>
+                    <select name="idperfil" id="idperfil" required 
+                            class="w-full px-3 py-2 rounded-lg border border-purple-300 border-opacity-50 bg-white bg-opacity-70 
+                                   backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 focus:ring-opacity-50 
+                                   text-gray-900 shadow-md transition-all duration-300 text-sm
+                                   hover:border-purple-400 hover:bg-opacity-80 focus:bg-opacity-90">
                         <option value="">Seleccione un perfil...</option>
                         {% for perfil in perfiles %}
                         <option value="{{ perfil.Idperfil }}">{{ perfil.descripc }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <button type="submit" class="w-full btn btn-primary">Guardar Usuario</button>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 
+                                                 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg transform hover:scale-105 
+                                                 transition-all duration-300 flex items-center justify-center text-sm
+                                                 focus:ring-2 focus:ring-purple-300 focus:ring-opacity-50">
+                        <i class="fas fa-save mr-2"></i>
+                        Guardar Usuario
+                    </button>
+                </div>
             </form>
         </div>
     </div>
     <!-- Columna de la Tabla -->
     <div class="lg:col-span-2">
-        <div class="card">
-            <h2 class="text-xl font-bold mb-4">Usuarios Registrados</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuario</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Persona</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Perfil</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for usuario in usuarios %}
-                        <tr>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.nombreu }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.nombre_persona }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">{{ usuario.descripc }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                {% if usuario.estado %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
-                                {% else %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                
-                                <a href="{{ url_for('editar_usuario', id=usuario.Idusuario) }}" class="btn bg-blue-500 hover:bg-blue-600 text-white text-xs">Modificar</a>
-                                <a href="{{ url_for('inhabilitar_usuario', id=usuario.Idusuario) }}" class="btn {{ 'btn-danger' if usuario.estado else 'btn-primary' }} text-xs">
-                                    {{ 'Inhabilitar' if usuario.estado else 'Habilitar' }}
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay usuarios registrados.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-purple-300 border-opacity-30 hover:shadow-2xl hover:bg-opacity-70 transition-all duration-300">
+            <div class="flex justify-between items-center mb-4 border-b border-purple-300 border-opacity-50 pb-2">
+                <h2 class="text-lg font-black text-purple-800 flex items-center">
+                    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-2 rounded-lg mr-2 shadow-md">
+                        <i class="fas fa-list text-white text-sm"></i>
+                    </div>
+                    <span class="bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent">
+                        Usuarios Registrados
+                    </span>
+                </h2>
+                <div class="bg-gradient-to-r from-purple-100 to-indigo-100 bg-opacity-60 backdrop-blur-sm px-3 py-1 rounded-lg border border-purple-300 border-opacity-40 shadow-md">
+                    <span class="text-xs font-bold text-purple-800">
+                        {{ usuarios|length }} usuario(s)
+                    </span>
+                </div>
             </div>
+            
+            {% if usuarios %}
+            <div class="overflow-hidden rounded-lg shadow-lg border border-purple-300 border-opacity-30">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white bg-opacity-80 backdrop-blur-sm">
+                        <thead class="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-purple-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user mr-2 text-purple-200"></i>
+                                        Usuario
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-purple-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-id-card mr-2 text-purple-200"></i>
+                                        Persona
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-purple-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user-tag mr-2 text-purple-200"></i>
+                                        Perfil
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-purple-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-toggle-on mr-2 text-purple-200"></i>
+                                        Estado
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-purple-400 border-opacity-50">
+                                    <div class="flex items-center justify-center">
+                                        <i class="fas fa-cogs mr-2 text-purple-200"></i>
+                                        Acciones
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-purple-200 divide-opacity-30">
+                            {% for usuario in usuarios %}
+                            <tr class="hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 hover:bg-opacity-60 transition-all duration-300 group">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-user text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ usuario.nombreu }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-id-card text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ usuario.nombre_persona }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-user-tag text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ usuario.descripc }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        {% if usuario.estado %}
+                                            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Activo
+                                            </div>
+                                        {% else %}
+                                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                                <i class="fas fa-times-circle mr-1"></i>
+                                                Inactivo
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <div class="flex justify-center space-x-2">
+                                        <a href="{{ url_for('editar_usuario', id=usuario.Idusuario) }}" 
+                                           class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/edit text-xs font-bold">
+                                            <i class="fas fa-edit mr-1 group-hover/edit:rotate-12 transition-transform duration-300"></i>
+                                            Modificar
+                                        </a>
+                                        <a href="{{ url_for('inhabilitar_usuario', id=usuario.Idusuario) }}" 
+                                           class="{{ 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800' if usuario.estado else 'bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800' }} 
+                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
+                                                  transition-all duration-300 group/toggle text-xs font-bold">
+                                            <i class="fas {{ 'fa-ban' if usuario.estado else 'fa-check' }} mr-1 group-hover/toggle:rotate-12 transition-transform duration-300"></i>
+                                            {{ 'Inhabilitar' if usuario.estado else 'Habilitar' }}
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-8">
+                                    <div class="bg-gradient-to-br from-purple-100 to-indigo-100 bg-opacity-40 backdrop-blur-sm 
+                                                p-8 rounded-2xl border-2 border-purple-300 border-opacity-20 shadow-lg mx-4">
+                                        <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-4 rounded-full mx-auto mb-4 
+                                                    w-16 h-16 flex items-center justify-center shadow-xl">
+                                            <i class="fas fa-users text-white text-2xl"></i>
+                                        </div>
+                                        <h3 class="text-lg font-black text-purple-800 mb-2">No hay usuarios registrados</h3>
+                                        <p class="text-purple-700 font-medium">Comienza creando el primer usuario del sistema.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="bg-gradient-to-br from-purple-100 to-indigo-100 bg-opacity-40 backdrop-blur-sm 
+                            p-12 rounded-3xl border-2 border-purple-300 border-opacity-20 shadow-xl">
+                    <div class="bg-gradient-to-br from-purple-500 to-indigo-600 p-6 rounded-full mx-auto mb-6 
+                                w-24 h-24 flex items-center justify-center shadow-2xl">
+                        <i class="fas fa-users text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-purple-800 mb-4">No hay usuarios registrados</h3>
+                    <p class="text-purple-700 text-lg font-medium">Comienza creando usuarios para gestionar el sistema.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -354,23 +354,139 @@ def inhabilitar_perfil(id):
                 flash(f'Error al cambiar el estado del perfil: {err}', 'error')
     return redirect(url_for('gestion_perfiles'))
 
-@app.route('/medicamentos')
+@app.route('/medicamentos', methods=['GET', 'POST'])
 def gestion_medicamentos():
     if session.get('user_profile') != 'Administrador':
         flash('Acceso no autorizado.', 'error')
         return redirect(url_for('menu_principal'))
+
     conn = get_db()
-    usuarios, personas, perfiles = [], [], []
-    if conn:
-        cursor = conn.cursor(dictionary=True)
-        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
-        cursor.execute(query_usuarios)
-        usuarios = cursor.fetchall()
-        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
-        personas = cursor.fetchall()
-        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
-        perfiles = cursor.fetchall()
-    return render_template('gestion_medicamentos.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+
+    cursor = conn.cursor(dictionary=True)
+
+    # --- Crear medicamento (POST) ---
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        presentacion = request.form.get('presentacion', '').strip()
+        idmascota = request.form.get('idmascota')
+
+        if not nombre or not presentacion or not idmascota:
+            flash('Nombre, presentación y mascota son obligatorios.', 'error')
+            cursor.close(); conn.close()
+            return redirect(url_for('gestion_medicamentos'))
+
+        try:
+            cursor.execute("""
+                INSERT INTO medicamento (nombre, presentacion, idmascota, estado)
+                VALUES (%s, %s, %s, 1)
+            """, (nombre, presentacion, idmascota))
+            conn.commit()
+            flash('Medicamento creado exitosamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al crear medicamento: {err}', 'error')
+        finally:
+            cursor.close(); conn.close()
+        return redirect(url_for('gestion_medicamentos'))
+
+    # --- GET: cargar datos para la vista ---
+    try:
+        cursor.execute("""
+            SELECT Idmedicamento, nombre, presentacion, estado
+            FROM medicamento
+            ORDER BY Idmedicamento DESC
+        """)
+        medicamentos = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT Idmascota, nombre
+            FROM mascota
+            WHERE estado = 1
+            ORDER BY nombre
+        """)
+        mascotas = cursor.fetchall()
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        medicamentos, mascotas = [], []
+    finally:
+        cursor.close(); conn.close()
+
+    return render_template('gestion_medicamentos.html',
+                           medicamentos=medicamentos,
+                           mascotas=mascotas)
+
+
+@app.route('/medicamento/editar/<int:id>', methods=['GET', 'POST'])
+def editar_medicamento(id):
+    if session.get('user_profile') != 'Administrador':
+        return redirect(url_for('login'))
+
+    conn = get_db(); cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre','').strip()
+        presentacion = request.form.get('presentacion','').strip()
+        if not nombre or not presentacion:
+            flash('Nombre y presentación son obligatorios.', 'error')
+            cursor.close(); conn.close()
+            return redirect(url_for('editar_medicamento', id=id))
+        try:
+            cursor.execute("""
+                UPDATE medicamento SET nombre=%s, presentacion=%s
+                WHERE Idmedicamento=%s
+            """, (nombre, presentacion, id))
+            conn.commit()
+            flash('Medicamento actualizado correctamente.', 'success')
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al actualizar medicamento: {err}', 'error')
+        finally:
+            cursor.close(); conn.close()
+        return redirect(url_for('gestion_medicamentos'))
+
+    # GET
+    cursor.execute("""
+        SELECT Idmedicamento, nombre, presentacion, estado
+        FROM medicamento WHERE Idmedicamento=%s
+    """, (id,))
+    medicamento = cursor.fetchone()
+    cursor.close(); conn.close()
+    if not medicamento:
+        flash('Medicamento no encontrado.', 'error')
+        return redirect(url_for('gestion_medicamentos'))
+    return render_template('editar_medicamento.html', medicamento=medicamento)
+
+@app.route('/medicamento/inhabilitar/<int:id>')
+def inhabilitar_medicamento(id):
+    if session.get('user_profile') != 'Administrador':
+        return redirect(url_for('login'))
+
+    conn = get_db(); cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT estado FROM medicamento WHERE Idmedicamento=%s", (id,))
+        row = cursor.fetchone()
+        if not row:
+            flash('Medicamento no encontrado.', 'error')
+            return redirect(url_for('gestion_medicamentos'))
+
+        nuevo = 0 if row['estado'] else 1
+        cursor.execute("UPDATE medicamento SET estado=%s WHERE Idmedicamento=%s", (nuevo, id))
+        conn.commit()
+        flash('Estado actualizado.', 'success')
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al cambiar estado: {err}', 'error')
+    finally:
+        cursor.close(); conn.close()
+    return redirect(url_for('gestion_medicamentos'))
+
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.now}
 
 @app.route('/veterinarios')
 def gestion_veterinarios():
@@ -379,29 +495,31 @@ def gestion_veterinarios():
         return redirect(url_for('menu_principal'))
 
     conn = get_db()
-    usuarios, personas, perfiles, mascotas = [], [], [], []
+    usuarios, personas, perfiles, mascotas, asignaciones = [], [], [], [], []
 
     if conn:
         cursor = conn.cursor(dictionary=True)
 
-
-        # Usuarios veterinarios ya registrados
+        # Usuarios (si quieres solo veterinarios, descomenta el WHERE de abajo)
         query_usuarios = """
-            SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona,
+            SELECT u.Idusuario, u.nombreu,
+                   CONCAT(pe.nom1, ' ', pe.apell1) AS nombre_persona,
                    pr.descripc, u.estado
             FROM Usuario u
             JOIN Persona pe ON u.idpersona = pe.Idpersona
-            JOIN Perfil pr ON u.idperfil = pr.Idperfil
+            JOIN Perfil pr  ON u.idperfil = pr.Idperfil
+            -- WHERE pr.descripc = 'Veterinario'
             ORDER BY u.Idusuario DESC
         """
         cursor.execute(query_usuarios)
         usuarios = cursor.fetchall()
 
-        # Personas sin usuario asignado (para crear nuevos usuarios)
+        # Personas sin usuario
         cursor.execute("""
-            SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo
+            SELECT Idpersona, CONCAT(nom1, ' ', apell1) AS nombre_completo
             FROM Persona
-            WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)
+            WHERE estado = TRUE
+              AND Idpersona NOT IN (SELECT idpersona FROM Usuario)
         """)
         personas = cursor.fetchall()
 
@@ -413,13 +531,32 @@ def gestion_veterinarios():
         cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1")
         mascotas = cursor.fetchall()
 
+        # 🔹 Asignaciones (mascotas que ya tienen veterinario)
+        cursor.execute("""
+            SELECT 
+                u.nombreu                                   AS nombreu,
+                CONCAT(pe.nom1, ' ', pe.apell1)             AS nombre_persona,
+                m.nombre                                    AS nombre_mascota
+            FROM mascota m
+            JOIN Usuario u  ON u.Idusuario = m.idveterinario
+            JOIN Persona pe ON pe.Idpersona = u.idpersona
+            WHERE m.idveterinario IS NOT NULL
+            ORDER BY pe.nom1, m.nombre
+        """)
+        asignaciones = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
     return render_template(
         'gestion_veterinarios.html',
         usuarios=usuarios,
         personas=personas,
         perfiles=perfiles,
-        mascotas=mascotas
+        mascotas=mascotas,
+        asignaciones=asignaciones,  # <-- pásalo al template
     )
+
 
 
 @app.route('/usuarios')

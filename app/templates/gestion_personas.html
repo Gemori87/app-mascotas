@@ -19,47 +19,70 @@ body {
             <h2 class="text-lg sm:text-xl font-bold mb-4">
                 {% if 'user_id' in session %}Crear Nueva Persona{% else %}Formulario de Registro{% endif %}
             </h2>
-            <form action="{{ url_for('crear_persona') }}" method="POST" class="space-y-3 sm:space-y-4">
-                
+            <form action="{{ url_for('crear_persona') }}" method="POST" class="space-y-3 sm:space-y-4">                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                         <label for="nom1" class="block text-sm font-medium text-gray-700">Primer Nombre*</label>
-                        <input type="text" name="nom1" id="nom1" required placeholder="Ej: Juan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="text" name="nom1" id="nom1" required placeholder="Ej: Juan" 
+                               value="{{ request.form.get('nom1', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
                     </div>
                     <div>
                         <label for="nom2" class="block text-sm font-medium text-gray-700">Segundo Nombre</label>
-                        <input type="text" name="nom2" id="nom2" placeholder="Ej: Carlos" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="text" name="nom2" id="nom2" placeholder="Ej: Carlos" 
+                               value="{{ request.form.get('nom2', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
                     </div>
                     <div>
                         <label for="apell1" class="block text-sm font-medium text-gray-700">Primer Apellido*</label>
-                        <input type="text" name="apell1" id="apell1" required placeholder="Ej: García" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="text" name="apell1" id="apell1" required placeholder="Ej: García" 
+                               value="{{ request.form.get('apell1', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
                     </div>
                     <div>
                         <label for="apell2" class="block text-sm font-medium text-gray-700">Segundo Apellido</label>
-                        <input type="text" name="apell2" id="apell2" placeholder="Ej: López" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="text" name="apell2" id="apell2" placeholder="Ej: López" 
+                               value="{{ request.form.get('apell2', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
                     </div>
                 </div>
                 <div>
+                    <label for="cedula" class="block text-sm font-medium text-gray-700">Cédula*</label>
+                    <input type="text" name="cedula" id="cedula" required placeholder="Ej: 1234567890" 
+                           value="{{ request.form.get('cedula', '') if request.method == 'POST' else '' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100 placeholder-gray-400">
+                </div>
+                <div>
                     <label for="correo" class="block text-sm font-medium text-gray-700">Correo Electrónico*</label>
-                    <input type="email" name="correo" id="correo" required placeholder="ejemplo@correo.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                    <input type="email" name="correo" id="correo" required 
+                           value="{{ request.form.get('correo', '') if request.method == 'POST' else '' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100">
                 </div>
                 <div>
                     <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>
-                    <input type="text" name="direccion" id="direccion" placeholder="Ej: Calle 123 #45-67, Barrio Centro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                    <input type="text" name="direccion" id="direccion" 
+                           value="{{ request.form.get('direccion', '') if request.method == 'POST' else '' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                         <label for="tele" class="block text-sm font-medium text-gray-700">Teléfono</label>
-                        <input type="tel" name="tele" id="tele" placeholder="Ej: 123-456-7890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="tel" name="tele" id="tele" 
+                               value="{{ request.form.get('tele', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100">
                     </div>
                     <div>
                         <label for="movil" class="block text-sm font-medium text-gray-700">Móvil</label>
-                        <input type="tel" name="movil" id="movil" placeholder="Ej: 321-098-7654" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90 placeholder-gray-400">
+                        <input type="tel" name="movil" id="movil" 
+                               value="{{ request.form.get('movil', '') if request.method == 'POST' else '' }}"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100">
                     </div>
                 </div>
                 <div>
                     <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                    <input type="date" name="fecha_nac" id="fecha_nac" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-60 focus:bg-opacity-90">
+                    <input type="date" name="fecha_nac" id="fecha_nac" 
+                           value="{{ request.form.get('fecha_nac', '') if request.method == 'POST' else '' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-white bg-opacity-80 focus:bg-opacity-100">
                 </div>                
                               
                 <button type="submit" class="w-full btn btn-primary text-sm sm:text-base">Guardar Persona</button>
@@ -69,6 +92,7 @@ body {
             </form>
         </div>
     </div>
+    
     <!-- Columna de la Tabla (Solo visible si el usuario está logueado) -->
     {% if 'user_id' in session %}
     <div class="lg:col-span-2">

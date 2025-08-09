@@ -13,7 +13,7 @@
                 <div>
                     <label for="nom2" class="block text-sm font-medium text-gray-700">Segundo Nombre</label>
                     <input type="text" name="nom2" id="nom2" value="{{ persona.nom2 or '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                </div>
+                </div>                
                 <div>
                     <label for="apell1" class="block text-sm font-medium text-gray-700">Primer Apellido*</label>
                     <input type="text" name="apell1" id="apell1" required value="{{ persona.apell1 }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -26,6 +26,10 @@
             <div>
                 <label for="correo" class="block text-sm font-medium text-gray-700">Correo Electrónico*</label>
                 <input type="email" name="correo" id="correo" required value="{{ persona.correo }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            </div>
+            <div>
+                <label for="cedula" class="block text-sm font-medium text-gray-700">Cédula*</label>
+                <input type="text" name="cedula" id="cedula" required value="{{ persona.cedula or '' }}" placeholder="Ej: 1234567890" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             </div>
             <div>
                 <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>

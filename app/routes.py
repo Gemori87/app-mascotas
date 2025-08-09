@@ -5,17 +5,26 @@ import secrets
 from .db import get_db
 from flask_mail import Message
 from app import mail
+import re
 
 app = current_app
 
 
 @app.route('/persona/crear', methods=['POST'])
 def crear_persona():
-    nom1 = request.form['nom1']
-    apell1 = request.form['apell1']
-    correo = request.form['correo']
+    nom1   = request.form['nom1'].strip()
+    apell1 = request.form['apell1'].strip()
+    correo = request.form['correo'].strip()
+    cedula = request.form.get('cedula', '').strip()
+
+    # Validaciones básicas
     if not nom1 or not apell1 or not correo:
         flash('Primer nombre, primer apellido y correo son obligatorios.', 'error')
+        return redirect(url_for('gestion_personas'))
+
+    msg_ced = validar_cedula(cedula)
+    if msg_ced:
+        flash(msg_ced, 'error')
         return redirect(url_for('gestion_personas'))
 
     conn = get_db()
@@ -26,58 +35,99 @@ def crear_persona():
     cursor = None
     try:
         cursor = conn.cursor(dictionary=True)
-        
-        # 1. Verificar si ya existen administradores
+
+        # 1) Verificar si ya existen administradores
         cursor.execute("""
-            SELECT COUNT(u.Idusuario) as admin_count
+            SELECT COUNT(u.Idusuario) AS admin_count
             FROM Usuario u
-            JOIN Perfil p ON u.idperfil = p.Idperfil
+            JOIN Perfil  p ON u.idperfil = p.Idperfil
             WHERE p.descripc = 'Administrador'
         """)
         has_admins = cursor.fetchone()['admin_count'] > 0
-        
-        # 2. Intentar crear la persona
+
+        # 2) Pre-chequeo de duplicados (evita esperar a la excepción 1062)
+        cursor.execute("SELECT 1 FROM Persona WHERE cedula = %s", (cedula,))
+        if cursor.fetchone():
+            flash('La cédula ingresada ya está registrada.', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('gestion_personas'))
+
+        cursor.execute("SELECT 1 FROM Persona WHERE correo = %s", (correo,))
+        if cursor.fetchone():
+            flash('El correo electrónico ya está registrado.', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('gestion_personas'))
+
+        # 3) Insert
         query = """
-            INSERT INTO Persona (nom1, nom2, apell1, apell2, direccion, tele, movil, correo, fecha_nac)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO Persona
+              (nom1, nom2, apell1, apell2, direccion, tele, movil, correo, fecha_nac, cedula)
+            VALUES
+              (%s,   %s,   %s,     %s,     %s,        %s,   %s,    %s,     %s,        %s)
         """
         fecha_nac = request.form.get('fecha_nac') or None
         cursor.execute(query, (
-            request.form['nom1'], request.form.get('nom2'), request.form['apell1'],
-            request.form.get('apell2'), request.form.get('direccion'), request.form.get('tele'),
-            request.form.get('movil'), request.form['correo'], fecha_nac
+            nom1, request.form.get('nom2'),
+            apell1, request.form.get('apell2'),
+            request.form.get('direccion'),
+            request.form.get('tele'),
+            request.form.get('movil'),
+            correo, fecha_nac, cedula
         ))
-        
-        new_persona_id = cursor.lastrowid # Obtenemos el ID de la persona recién creada
+
+        new_persona_id = cursor.lastrowid
         conn.commit()
+        cursor.close(); conn.close()
 
-        cursor.close()
-        conn.close()
-
-        # 3. Decidir a dónde redirigir al usuario
+        # 4) Redirección según haya admins o no
         if not has_admins:
-            # Si no había administradores, este nuevo usuario será el primero.
-            # Lo redirigimos a una página especial para que cree su cuenta de admin.
             return redirect(url_for('crear_primer_admin', persona_id=new_persona_id))
         else:
-            # Si ya hay administradores, regresamos a la gestión de personas.
-            flash('Persona registrada exitosamente. Un administrador debe crear su cuenta de usuario para poder ingresar.', 'success')
+            flash('Persona registrada exitosamente. Un administrador debe crear su cuenta de usuario para poder ingresar al sistema.', 'success')
             return redirect(url_for('gestion_personas'))
 
     except mysql.connector.Error as err:
-        conn.rollback()
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if conn: conn.rollback()
+        if cursor: cursor.close()
+        if conn: conn.close()
+
         if err.errno == 1062:
-            flash('Error: El correo electrónico ya está registrado.', 'error')
+            # Mensaje más específico según la clave única que saltó
+            em = str(err).lower()
+            if 'cedula' in em:
+                flash('Error: La cédula ya está registrada.', 'error')
+            elif 'correo' in em:
+                flash('Error: El correo ya está registrado.', 'error')
+            else:
+                flash('Error: registro duplicado.', 'error')
         else:
             flash(f'Error al crear la persona: {err}', 'error')
         return redirect(url_for('gestion_personas'))
+    except Exception as e:
+        if conn: conn.rollback()
+        if cursor: cursor.close()
+        if conn: conn.close()
+        flash(f'Error inesperado: {e}', 'error')
+        return redirect(url_for('gestion_personas'))
 
-
-
+def render_template_with_data_preserved(status):
+    """Helper function para renderizar el template con datos preservados"""
+    conn = get_db()
+    personas = []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT Idpersona, nom1, apell1, correo, cedula, estado
+            FROM Persona
+            ORDER BY Idpersona DESC
+        """)
+        personas = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    return render_template('gestion_personas.html', personas=personas) 
+    
 @app.route('/crear-primer-admin/<int:persona_id>', methods=['GET', 'POST'])
 def crear_primer_admin(persona_id):
     if request.method == 'POST':
@@ -214,37 +264,84 @@ def menu_principal():
         return redirect(url_for('login'))
     return render_template('menu.html')
 
-@app.route('/personas')
+@app.route('/personas', methods=['GET', 'POST'])
 def gestion_personas():
     conn = get_db()
     personas = []
     if conn:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT Idpersona, nom1, apell1, correo, estado FROM Persona ORDER BY Idpersona DESC")
+        cursor.execute("""
+            SELECT Idpersona, nom1, apell1, correo, cedula, estado
+            FROM Persona
+            ORDER BY Idpersona DESC
+        """)
         personas = cursor.fetchall()
+        cursor.close()
+        conn.close()
     return render_template('gestion_personas.html', personas=personas)
 
 @app.route('/persona/editar/<int:id>', methods=['GET', 'POST'])
 def editar_persona(id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     conn = get_db()
     if not conn:
         flash('Error de conexión con la base de datos.', 'error')
         return redirect(url_for('gestion_personas'))
+
     cursor = conn.cursor(dictionary=True)
+
     if request.method == 'POST':
         try:
-            update_query = "UPDATE Persona SET nom1 = %s, nom2 = %s, apell1 = %s, apell2 = %s, direccion = %s, tele = %s, movil = %s, correo = %s, fecha_nac = %s WHERE Idpersona = %s"
+            cedula = request.form.get('cedula', '').strip()
+            msg_ced = validar_cedula(cedula)
+            if msg_ced:
+                flash(msg_ced, 'error')
+                return redirect(url_for('editar_persona', id=id))
+
+            # chequear duplicado (otra persona con misma cédula)
+            cursor.execute("SELECT 1 FROM Persona WHERE cedula = %s AND Idpersona <> %s", (cedula, id))
+            if cursor.fetchone():
+                flash('La cédula ingresada ya está registrada en otra persona.', 'error')
+                return redirect(url_for('editar_persona', id=id))
+
+            update_query = """
+                UPDATE Persona
+                   SET nom1=%s, nom2=%s, apell1=%s, apell2=%s,
+                       direccion=%s, tele=%s, movil=%s, correo=%s,
+                       fecha_nac=%s, cedula=%s
+                 WHERE Idpersona=%s
+            """
             fecha_nac = request.form.get('fecha_nac') or None
-            cursor.execute(update_query, (request.form['nom1'], request.form.get('nom2'), request.form['apell1'], request.form.get('apell2'), request.form.get('direccion'), request.form.get('tele'), request.form.get('movil'), request.form['correo'], fecha_nac, id))
+            cursor.execute(update_query, (
+                request.form['nom1'], request.form.get('nom2'),
+                request.form['apell1'], request.form.get('apell2'),
+                request.form.get('direccion'), request.form.get('tele'),
+                request.form.get('movil'), request.form['correo'],
+                fecha_nac, cedula, id
+            ))
             conn.commit()
             flash('Persona actualizada correctamente.', 'success')
         except mysql.connector.Error as err:
             conn.rollback()
-            flash(f'Error al actualizar la persona: {err}', 'error')
+            if err.errno == 1062:
+                em = str(err).lower()
+                if 'cedula' in em:
+                    flash('Error: La cédula ya está registrada.', 'error')
+                elif 'correo' in em:
+                    flash('Error: El correo ya está registrado.', 'error')
+                else:
+                    flash('Error: registro duplicado.', 'error')
+            else:
+                flash(f'Error al actualizar la persona: {err}', 'error')
         return redirect(url_for('gestion_personas'))
+
+    # GET
     cursor.execute("SELECT * FROM Persona WHERE Idpersona = %s", (id,))
     persona = cursor.fetchone()
+    cursor.close(); conn.close()
+
     if persona:
         return render_template('editar_persona.html', persona=persona)
     else:
@@ -354,138 +451,23 @@ def inhabilitar_perfil(id):
                 flash(f'Error al cambiar el estado del perfil: {err}', 'error')
     return redirect(url_for('gestion_perfiles'))
 
-@app.route('/medicamentos', methods=['GET', 'POST'])
+@app.route('/medicamentos')
 def gestion_medicamentos():
     if session.get('user_profile') != 'Administrador':
         flash('Acceso no autorizado.', 'error')
         return redirect(url_for('menu_principal'))
-
     conn = get_db()
-    if not conn:
-        flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('menu_principal'))
-
-    cursor = conn.cursor(dictionary=True)
-
-    # --- Crear medicamento (POST) ---
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-        presentacion = request.form.get('presentacion', '').strip()
-
-        if not nombre or not presentacion:
-            flash('Nombre, presentación y mascota son obligatorios.', 'error')
-            cursor.close(); conn.close()
-            return redirect(url_for('gestion_medicamentos'))
-
-        try:
-            cursor.execute("""
-                INSERT INTO medicamento (nombre, presentacion, idmascota, estado)
-                VALUES (%s, %s, %s, 1)
-            """, (nombre, presentacion, idmascota))
-            conn.commit()
-            flash('Medicamento creado exitosamente.', 'success')
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f'Error al crear medicamento: {err}', 'error')
-        finally:
-            cursor.close(); conn.close()
-        return redirect(url_for('gestion_medicamentos'))
-
-    # --- GET: cargar datos para la vista ---
-    try:
-        cursor.execute("""
-            SELECT Idmedicamento, nombre, presentacion, estado
-            FROM medicamento
-            ORDER BY Idmedicamento DESC
-        """)
-        medicamentos = cursor.fetchall()
-
-        cursor.execute("""
-            SELECT Idmascota, nombre
-            FROM mascota
-            WHERE estado = 1
-            ORDER BY nombre
-        """)
-        mascotas = cursor.fetchall()
-    except mysql.connector.Error as err:
-        flash(f'Error al cargar datos: {err}', 'error')
-        medicamentos, mascotas = [], []
-    finally:
-        cursor.close(); conn.close()
-
-    return render_template('gestion_medicamentos.html',
-                           medicamentos=medicamentos,
-                           mascotas=mascotas)
-
-
-@app.route('/medicamento/editar/<int:id>', methods=['GET', 'POST'])
-def editar_medicamento(id):
-    if session.get('user_profile') != 'Administrador':
-        return redirect(url_for('login'))
-
-    conn = get_db(); cursor = conn.cursor(dictionary=True)
-
-    if request.method == 'POST':
-        nombre = request.form.get('nombre','').strip()
-        presentacion = request.form.get('presentacion','').strip()
-        if not nombre or not presentacion:
-            flash('Nombre y presentación son obligatorios.', 'error')
-            cursor.close(); conn.close()
-            return redirect(url_for('editar_medicamento', id=id))
-        try:
-            cursor.execute("""
-                UPDATE medicamento SET nombre=%s, presentacion=%s
-                WHERE Idmedicamento=%s
-            """, (nombre, presentacion, id))
-            conn.commit()
-            flash('Medicamento actualizado correctamente.', 'success')
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f'Error al actualizar medicamento: {err}', 'error')
-        finally:
-            cursor.close(); conn.close()
-        return redirect(url_for('gestion_medicamentos'))
-
-    # GET
-    cursor.execute("""
-        SELECT Idmedicamento, nombre, presentacion, estado
-        FROM medicamento WHERE Idmedicamento=%s
-    """, (id,))
-    medicamento = cursor.fetchone()
-    cursor.close(); conn.close()
-    if not medicamento:
-        flash('Medicamento no encontrado.', 'error')
-        return redirect(url_for('gestion_medicamentos'))
-    return render_template('editar_medicamento.html', medicamento=medicamento)
-
-@app.route('/medicamento/inhabilitar/<int:id>')
-def inhabilitar_medicamento(id):
-    if session.get('user_profile') != 'Administrador':
-        return redirect(url_for('login'))
-
-    conn = get_db(); cursor = conn.cursor(dictionary=True)
-    try:
-        cursor.execute("SELECT estado FROM medicamento WHERE Idmedicamento=%s", (id,))
-        row = cursor.fetchone()
-        if not row:
-            flash('Medicamento no encontrado.', 'error')
-            return redirect(url_for('gestion_medicamentos'))
-
-        nuevo = 0 if row['estado'] else 1
-        cursor.execute("UPDATE medicamento SET estado=%s WHERE Idmedicamento=%s", (nuevo, id))
-        conn.commit()
-        flash('Estado actualizado.', 'success')
-    except mysql.connector.Error as err:
-        conn.rollback()
-        flash(f'Error al cambiar estado: {err}', 'error')
-    finally:
-        cursor.close(); conn.close()
-    return redirect(url_for('gestion_medicamentos'))
-
-@app.context_processor
-def inject_now():
-    from datetime import datetime
-    return {'now': datetime.now}
+    usuarios, personas, perfiles = [], [], []
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
+        cursor.execute(query_usuarios)
+        usuarios = cursor.fetchall()
+        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
+        personas = cursor.fetchall()
+        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
+        perfiles = cursor.fetchall()
+    return render_template('gestion_medicamentos.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
 
 @app.route('/veterinarios')
 def gestion_veterinarios():
@@ -497,55 +479,68 @@ def gestion_veterinarios():
     usuarios, personas, perfiles, mascotas, asignaciones = [], [], [], [], []
 
     if conn:
-        cursor = conn.cursor(dictionary=True)
+        cursor = None
+        try:
+            cursor = conn.cursor(dictionary=True)
 
-        # Usuarios (si quieres solo veterinarios, descomenta el WHERE de abajo)
-        query_usuarios = """
-            SELECT u.Idusuario, u.nombreu,
-                   CONCAT(pe.nom1, ' ', pe.apell1) AS nombre_persona,
-                   pr.descripc, u.estado
-            FROM Usuario u
-            JOIN Persona pe ON u.idpersona = pe.Idpersona
-            JOIN Perfil pr  ON u.idperfil = pr.Idperfil
-            -- WHERE pr.descripc = 'Veterinario'
-            ORDER BY u.Idusuario DESC
-        """
-        cursor.execute(query_usuarios)
-        usuarios = cursor.fetchall()
+            # Usuarios veterinarios ya registrados
+            query_usuarios = """
+                SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona,
+                       pe.nom1, pe.apell1, pr.descripc, u.estado
+                FROM Usuario u
+                JOIN Persona pe ON u.idpersona = pe.Idpersona
+                JOIN Perfil pr ON u.idperfil = pr.Idperfil
+                WHERE u.estado = 1
+                ORDER BY pe.nom1, pe.apell1
+            """
+            cursor.execute(query_usuarios)
+            usuarios = cursor.fetchall()
 
-        # Personas sin usuario
-        cursor.execute("""
-            SELECT Idpersona, CONCAT(nom1, ' ', apell1) AS nombre_completo
-            FROM Persona
-            WHERE estado = TRUE
-              AND Idpersona NOT IN (SELECT idpersona FROM Usuario)
-        """)
-        personas = cursor.fetchall()
+            # Personas sin usuario asignado (para crear nuevos usuarios)
+            cursor.execute("""
+                SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo
+                FROM Persona
+                WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario WHERE estado = 1)
+            """)
+            personas = cursor.fetchall()
 
-        # Perfiles activos
-        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
-        perfiles = cursor.fetchall()
+            # Perfiles activos
+            cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
+            perfiles = cursor.fetchall()
 
-        # Mascotas activas
-        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE estado = 1")
-        mascotas = cursor.fetchall()
+            # Mascotas activas (solo las que no tienen veterinario asignado)
+            cursor.execute("""
+                SELECT m.Idmascota, m.nombre, m.codigo,
+                       CONCAT(p.nom1, ' ', p.apell1) as nombre_dueno
+                FROM mascota m
+                JOIN persona p ON m.idduenio = p.Idpersona
+                WHERE m.estado = 1
+                ORDER BY m.nombre
+            """)
+            mascotas = cursor.fetchall()
 
-        # 🔹 Asignaciones (mascotas que ya tienen veterinario)
-        cursor.execute("""
-            SELECT 
-                u.nombreu                                   AS nombreu,
-                CONCAT(pe.nom1, ' ', pe.apell1)             AS nombre_persona,
-                m.nombre                                    AS nombre_mascota
-            FROM mascota m
-            JOIN Usuario u  ON u.Idusuario = m.idveterinario
-            JOIN Persona pe ON pe.Idpersona = u.idpersona
-            WHERE m.idveterinario IS NOT NULL
-            ORDER BY pe.nom1, m.nombre
-        """)
-        asignaciones = cursor.fetchall()
+            # Obtener las asignaciones actuales (mascotas asignadas a veterinarios)
+            cursor.execute("""
+                SELECT m.Idmascota, m.nombre as nombre_mascota, m.codigo,
+                       u.Idusuario, u.nombreu, 
+                       CONCAT(p.nom1, ' ', p.apell1) as nombre_persona,
+                       CONCAT(due.nom1, ' ', due.apell1) as nombre_dueno
+                FROM mascota m
+                JOIN Usuario u ON m.idveterinario = u.Idusuario
+                JOIN Persona p ON u.idpersona = p.Idpersona
+                JOIN persona due ON m.idduenio = due.Idpersona
+                WHERE m.idveterinario IS NOT NULL AND m.estado = 1 AND u.estado = 1
+                ORDER BY m.nombre
+            """)
+            asignaciones = cursor.fetchall()
 
-        cursor.close()
-        conn.close()
+        except mysql.connector.Error as err:
+            flash(f'Error al cargar los datos: {err}', 'error')
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     return render_template(
         'gestion_veterinarios.html',
@@ -553,9 +548,8 @@ def gestion_veterinarios():
         personas=personas,
         perfiles=perfiles,
         mascotas=mascotas,
-        asignaciones=asignaciones,  # <-- pásalo al template
+        asignaciones=asignaciones
     )
-
 
 
 @app.route('/usuarios')
@@ -1909,14 +1903,108 @@ def asignar_mascota():
     idusuario = request.form.get('idusuario')
     idmascota = request.form.get('idmascota')
 
+    # Validaciones
+    if not idusuario or not idmascota:
+        flash('Debe seleccionar tanto un veterinario como una mascota.', 'error')
+        return redirect(url_for('gestion_veterinarios'))
+
     conn = get_db()
-    if conn:
-        cursor = conn.cursor()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_veterinarios'))
+
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # Verificar que el usuario existe y está activo
+        cursor.execute("SELECT Idusuario, nombreu FROM Usuario WHERE Idusuario = %s AND estado = 1", (idusuario,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            flash('El usuario veterinario seleccionado no es válido o está inactivo.', 'error')
+            return redirect(url_for('gestion_veterinarios'))
+        
+        # Verificar que la mascota existe y está activa
+        cursor.execute("SELECT Idmascota, nombre FROM mascota WHERE Idmascota = %s AND estado = 1", (idmascota,))
+        mascota = cursor.fetchone()
+        if not mascota:
+            flash('La mascota seleccionada no es válida o está inactiva.', 'error')
+            return redirect(url_for('gestion_veterinarios'))
+        
+        # Verificar si la mascota ya tiene un veterinario asignado
+        cursor.execute("SELECT idveterinario FROM mascota WHERE Idmascota = %s", (idmascota,))
+        current_assignment = cursor.fetchone()
+        if current_assignment['idveterinario'] is not None:
+            flash(f'La mascota "{mascota["nombre"]}" ya tiene un veterinario asignado. Se actualizará la asignación.', 'warning')
+        
+        # Realizar la asignación
         cursor.execute("UPDATE mascota SET idveterinario = %s WHERE Idmascota = %s", (idusuario, idmascota))
         conn.commit()
-        flash("Mascota asignada exitosamente", "success")
+        
+        flash(f'Mascota "{mascota["nombre"]}" asignada exitosamente al veterinario "{usuario["nombreu"]}"', 'success')
+        
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al asignar la mascota: {err}', 'error')
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-    return redirect(url_for('gestion_veterinarios'))  # <- evita error de template faltante
+    return redirect(url_for('gestion_veterinarios'))
+
+
+@app.route('/desasignar_mascota/<int:idmascota>', methods=['POST'])
+def desasignar_mascota(idmascota):
+    """Desasignar una mascota de su veterinario actual"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_veterinarios'))
+
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # Obtener información de la mascota antes de desasignar
+        cursor.execute("""
+            SELECT m.nombre, CONCAT(p.nom1, ' ', p.apell1) as veterinario_nombre
+            FROM mascota m
+            LEFT JOIN Usuario u ON m.idveterinario = u.Idusuario
+            LEFT JOIN Persona p ON u.idpersona = p.Idpersona
+            WHERE m.Idmascota = %s
+        """, (idmascota,))
+        mascota_info = cursor.fetchone()
+        
+        if not mascota_info:
+            flash('Mascota no encontrada.', 'error')
+            return redirect(url_for('gestion_veterinarios'))
+        
+        # Desasignar la mascota
+        cursor.execute("UPDATE mascota SET idveterinario = NULL WHERE Idmascota = %s", (idmascota,))
+        conn.commit()
+        
+        veterinario_nombre = mascota_info['veterinario_nombre'] or 'Sin asignar'
+        flash(f'Mascota "{mascota_info["nombre"]}" desasignada exitosamente del veterinario "{veterinario_nombre}"', 'success')
+        
+    except mysql.connector.Error as err:
+        conn.rollback()
+        flash(f'Error al desasignar la mascota: {err}', 'error')
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    return redirect(url_for('gestion_veterinarios'))
 
 
 @app.route('/citas')
@@ -2062,3 +2150,15 @@ def enviar_correo_cita(idmascota, fecha_hora_obj, motivo, asunto):
         mail.send(msg)
     except Exception as e:
         print(f"Error al enviar correo: {e}")
+        
+def validar_cedula(ced):
+    ced = (ced or "").strip()
+    if not ced:
+        return "La cédula es obligatoria."
+    if len(ced) > 20:
+        return "La cédula admite máximo 20 caracteres."
+    # Si quieres solo dígitos, usa: r'^\d+$'
+    if not re.match(r'^[0-9A-Za-z.\-]+$', ced):
+        return "La cédula solo puede contener números/letras y . -"
+    return None
+

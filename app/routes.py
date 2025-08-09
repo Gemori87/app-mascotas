@@ -371,9 +371,8 @@ def gestion_medicamentos():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         presentacion = request.form.get('presentacion', '').strip()
-        idmascota = request.form.get('idmascota')
 
-        if not nombre or not presentacion or not idmascota:
+        if not nombre or not presentacion:
             flash('Nombre, presentación y mascota son obligatorios.', 'error')
             cursor.close(); conn.close()
             return redirect(url_for('gestion_medicamentos'))

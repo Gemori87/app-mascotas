@@ -40,6 +40,7 @@ body {
                         Nombre de medicamento*
                     </label>
                     <input type="text" name="nombre" id="nombre" required 
+                           value="{{ request.form.get('nombre', '') if request.method == 'POST' else '' }}"
                            placeholder="Ej: Amoxicilina, Ibuprofeno..." 
                            class="w-full px-3 py-2 rounded-md border border-gray-300 
                                   focus:border-green-500 focus:ring-2 focus:ring-green-200 
@@ -51,6 +52,7 @@ body {
                         Presentación*
                     </label>
                     <input type="text" name="presentacion" id="presentacion" required 
+                           value="{{ request.form.get('presentacion', '') if request.method == 'POST' else '' }}"
                            placeholder="Ej: Tabletas 500mg, Jarabe 250ml..." 
                            class="w-full px-3 py-2 rounded-md border border-gray-300 
                                   focus:border-green-500 focus:ring-2 focus:ring-green-200 

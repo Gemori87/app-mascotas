@@ -451,23 +451,200 @@ def inhabilitar_perfil(id):
                 flash(f'Error al cambiar el estado del perfil: {err}', 'error')
     return redirect(url_for('gestion_perfiles'))
 
-@app.route('/medicamentos')
+@app.route('/medicamentos', methods=['GET', 'POST'])
 def gestion_medicamentos():
     if session.get('user_profile') != 'Administrador':
         flash('Acceso no autorizado.', 'error')
         return redirect(url_for('menu_principal'))
+    
+    if request.method == 'POST':
+        # Procesar creación de medicamento
+        nombre = request.form.get('nombre', '').strip()
+        presentacion = request.form.get('presentacion', '').strip()
+        
+        if not nombre or not presentacion:
+            flash('Nombre y presentación son obligatorios.', 'error')
+            return redirect(url_for('gestion_medicamentos'))
+        
+        conn = get_db()
+        if conn:
+            try:
+                cursor = conn.cursor(dictionary=True)
+                
+                # Verificar si ya existe un medicamento con el mismo nombre y presentación
+                cursor.execute("""
+                    SELECT 1 FROM medicamento 
+                    WHERE nombre = %s AND presentacion = %s
+                """, (nombre, presentacion))
+                
+                if cursor.fetchone():
+                    flash('Ya existe un medicamento con el mismo nombre y presentación.', 'error')
+                    cursor.close()
+                    conn.close()
+                    return redirect(url_for('gestion_medicamentos'))
+                
+                # Insertar nuevo medicamento
+                cursor.execute("""
+                    INSERT INTO medicamento (nombre, presentacion, estado)
+                    VALUES (%s, %s, 1)
+                """, (nombre, presentacion))
+                
+                conn.commit()
+                cursor.close()
+                conn.close()
+                flash('Medicamento creado exitosamente.', 'success')
+                
+            except mysql.connector.Error as err:
+                if conn: conn.rollback()
+                flash(f'Error al crear el medicamento: {err}', 'error')
+                if cursor: cursor.close()
+                if conn: conn.close()
+        
+        return redirect(url_for('gestion_medicamentos'))
+    
+    # Método GET - Mostrar lista de medicamentos
     conn = get_db()
-    usuarios, personas, perfiles = [], [], []
+    medicamentos = []
     if conn:
         cursor = conn.cursor(dictionary=True)
-        query_usuarios = "SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona, pr.descripc, u.estado FROM Usuario u JOIN Persona pe ON u.idpersona = pe.Idpersona JOIN Perfil pr ON u.idperfil = pr.Idperfil ORDER BY u.Idusuario DESC"
-        cursor.execute(query_usuarios)
-        usuarios = cursor.fetchall()
-        cursor.execute("SELECT Idpersona, CONCAT(nom1, ' ', apell1) as nombre_completo FROM Persona WHERE estado = TRUE AND Idpersona NOT IN (SELECT idpersona FROM Usuario)")
-        personas = cursor.fetchall()
-        cursor.execute("SELECT Idperfil, descripc FROM Perfil WHERE estado = TRUE")
-        perfiles = cursor.fetchall()
-    return render_template('gestion_medicamentos.html', usuarios=usuarios, personas=personas, perfiles=perfiles)
+        cursor.execute("""
+            SELECT Idmedicamento, nombre, presentacion, estado
+            FROM medicamento
+            ORDER BY Idmedicamento DESC
+        """)
+        medicamentos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    
+    return render_template('gestion_medicamentos.html', medicamentos=medicamentos)
+
+@app.route('/medicamento/editar/<int:id>', methods=['GET', 'POST'])
+def editar_medicamento(id):
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_medicamentos'))
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        presentacion = request.form.get('presentacion', '').strip()
+        
+        if not nombre or not presentacion:
+            flash('Nombre y presentación son obligatorios.', 'error')
+            return redirect(url_for('editar_medicamento', id=id))
+        
+        try:
+            cursor = conn.cursor(dictionary=True)
+            
+            # Verificar si ya existe otro medicamento con el mismo nombre y presentación
+            cursor.execute("""
+                SELECT 1 FROM medicamento 
+                WHERE nombre = %s AND presentacion = %s AND Idmedicamento != %s
+            """, (nombre, presentacion, id))
+            
+            if cursor.fetchone():
+                flash('Ya existe otro medicamento con el mismo nombre y presentación.', 'error')
+                cursor.close()
+                conn.close()
+                return redirect(url_for('editar_medicamento', id=id))
+            
+            # Actualizar medicamento
+            cursor.execute("""
+                UPDATE medicamento 
+                SET nombre = %s, presentacion = %s
+                WHERE Idmedicamento = %s
+            """, (nombre, presentacion, id))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            flash('Medicamento actualizado exitosamente.', 'success')
+            return redirect(url_for('gestion_medicamentos'))
+            
+        except mysql.connector.Error as err:
+            if conn: conn.rollback()
+            flash(f'Error al actualizar el medicamento: {err}', 'error')
+            if cursor: cursor.close()
+            if conn: conn.close()
+            return redirect(url_for('editar_medicamento', id=id))
+    
+    # Método GET - Mostrar formulario de edición
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT Idmedicamento, nombre, presentacion, estado
+            FROM medicamento
+            WHERE Idmedicamento = %s
+        """, (id,))
+        medicamento = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not medicamento:
+            flash('Medicamento no encontrado.', 'error')
+            return redirect(url_for('gestion_medicamentos'))
+        
+        return render_template('editar_medicamento.html', medicamento=medicamento)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar el medicamento: {err}', 'error')
+        if cursor: cursor.close()
+        if conn: conn.close()
+        return redirect(url_for('gestion_medicamentos'))
+
+@app.route('/medicamento/inhabilitar/<int:id>')
+def inhabilitar_medicamento(id):
+    if session.get('user_profile') != 'Administrador':
+        flash('Acceso no autorizado.', 'error')
+        return redirect(url_for('menu_principal'))
+
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_medicamentos'))
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        
+        # Obtener el estado actual del medicamento
+        cursor.execute("""
+            SELECT estado, nombre FROM medicamento WHERE Idmedicamento = %s
+        """, (id,))
+        medicamento = cursor.fetchone()
+        
+        if not medicamento:
+            flash('Medicamento no encontrado.', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('gestion_medicamentos'))
+        
+        # Cambiar el estado
+        nuevo_estado = 0 if medicamento['estado'] else 1
+        accion = "habilitado" if nuevo_estado else "deshabilitado"
+        
+        cursor.execute("""
+            UPDATE medicamento 
+            SET estado = %s
+            WHERE Idmedicamento = %s
+        """, (nuevo_estado, id))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        flash(f'Medicamento "{medicamento["nombre"]}" {accion} exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        if conn: conn.rollback()
+        flash(f'Error al cambiar el estado del medicamento: {err}', 'error')
+        if cursor: cursor.close()
+        if conn: conn.close()
+    
+    return redirect(url_for('gestion_medicamentos'))
 
 @app.route('/veterinarios')
 def gestion_veterinarios():

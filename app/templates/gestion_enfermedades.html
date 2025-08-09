@@ -192,18 +192,26 @@ body {
                                 {% endif %}
                             </td>
                             <td class="px-2 sm:px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-1">
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                                     <a href="{{ url_for('editar_enfermedad', id=enfermedad.Idenfermedad) }}" 
-                                       class="btn bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white text-xs p-1 sm:p-2 shadow-md" 
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
+                                       class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg
+                                              bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 
+                                              text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200
+                                              focus:ring-4 focus:ring-yellow-300 focus:ring-opacity-50 min-w-max" 
+                                       title="Editar enfermedad">
+                                        <i class="fas fa-edit mr-2"></i>
+                                        <span class="hidden lg:inline">Editar</span>
                                     </a>
                                     {% if session.user_profile == 'Administrador' %}
                                     <a href="{{ url_for('inhabilitar_enfermedad', id=enfermedad.Idenfermedad) }}" 
-                                       class="btn {{ 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700' if enfermedad.estado else 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' }} text-white text-xs p-1 sm:p-2 shadow-md"
-                                       title="{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}"
-                                       onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} esta enfermedad?')">
-                                        <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %}"></i>
+                                       class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg
+                                              {{ 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-300' if enfermedad.estado else 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:ring-green-300' }} 
+                                              text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200
+                                              focus:ring-4 focus:ring-opacity-50 min-w-max"
+                                       title="{% if enfermedad.estado %}Deshabilitar enfermedad{% else %}Habilitar enfermedad{% endif %}"
+                                       onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} la enfermedad &quot;{{ enfermedad.nombre }}&quot;?')">
+                                        <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %} mr-2"></i>
+                                        <span class="hidden lg:inline">{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}</span>
                                     </a>
                                     {% endif %}
                                 </div>

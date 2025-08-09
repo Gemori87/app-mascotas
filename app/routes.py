@@ -9,28 +9,68 @@ import re
 
 app = current_app
 
+def render_personas_with_preserved_data():
+    """Función auxiliar para renderizar gestion_personas.html preservando los datos del formulario"""
+    conn = get_db()
+    personas = []
+    if conn:
+        cursor = None
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT Idpersona, nom1, apell1, correo, cedula, estado
+                FROM Persona
+                ORDER BY Idpersona DESC
+            """)
+            personas = cursor.fetchall()
+        except mysql.connector.Error as err:
+            print(f"Error al obtener personas: {err}")
+            personas = []
+        finally:
+            if cursor:
+                try:
+                    cursor.close()
+                except:
+                    pass
+            if conn:
+                try:
+                    conn.close()
+                except:
+                    pass
+    
+    # Pasar los datos del formulario directamente al template
+    form_data = {
+        'nom1': request.form.get('nom1', ''),
+        'nom2': request.form.get('nom2', ''),
+        'apell1': request.form.get('apell1', ''),
+        'apell2': request.form.get('apell2', ''),
+        'cedula': request.form.get('cedula', ''),
+        'correo': request.form.get('correo', ''),
+        'direccion': request.form.get('direccion', ''),
+        'tele': request.form.get('tele', ''),
+        'movil': request.form.get('movil', ''),
+        'fecha_nac': request.form.get('fecha_nac', '')
+    }
+    
+    return render_template('gestion_personas.html', personas=personas, form_data=form_data, preserve_data=True)
+
 
 @app.route('/persona/crear', methods=['POST'])
 def crear_persona():
     nom1   = request.form['nom1'].strip()
     apell1 = request.form['apell1'].strip()
     correo = request.form['correo'].strip()
-    cedula = request.form.get('cedula', '').strip()
+    cedula = request.form['cedula'].strip()
 
     # Validaciones básicas
-    if not nom1 or not apell1 or not correo:
-        flash('Primer nombre, primer apellido y correo son obligatorios.', 'error')
-        return redirect(url_for('gestion_personas'))
-
-    msg_ced = validar_cedula(cedula)
-    if msg_ced:
-        flash(msg_ced, 'error')
-        return redirect(url_for('gestion_personas'))
+    if not nom1 or not apell1 or not correo or not cedula:
+        flash('Primer nombre, primer apellido, correo y cédula son obligatorios.', 'error')
+        return render_personas_with_preserved_data()
 
     conn = get_db()
     if not conn:
         flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('gestion_personas'))
+        return render_personas_with_preserved_data()
 
     cursor = None
     try:
@@ -45,27 +85,23 @@ def crear_persona():
         """)
         has_admins = cursor.fetchone()['admin_count'] > 0
 
-        # 2) Pre-chequeo de duplicados (evita esperar a la excepción 1062)
-        cursor.execute("SELECT 1 FROM Persona WHERE cedula = %s", (cedula,))
-        if cursor.fetchone():
-            flash('La cédula ingresada ya está registrada.', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('gestion_personas'))
-
+        # 2) Pre-chequeo de duplicados (correo y cedula)
         cursor.execute("SELECT 1 FROM Persona WHERE correo = %s", (correo,))
         if cursor.fetchone():
             flash('El correo electrónico ya está registrado.', 'error')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('gestion_personas'))
+            return render_personas_with_preserved_data()
+
+        cursor.execute("SELECT 1 FROM Persona WHERE cedula = %s", (cedula,))
+        if cursor.fetchone():
+            flash('La cédula ya está registrada.', 'error')
+            return render_personas_with_preserved_data()
 
         # 3) Insert
         query = """
             INSERT INTO Persona
-              (nom1, nom2, apell1, apell2, direccion, tele, movil, correo, fecha_nac, cedula)
+              (nom1, nom2, apell1, apell2, direccion, tele, movil, correo, cedula, fecha_nac)
             VALUES
-              (%s,   %s,   %s,     %s,     %s,        %s,   %s,    %s,     %s,        %s)
+              (%s,   %s,   %s,     %s,     %s,        %s,   %s,    %s,     %s,     %s)
         """
         fecha_nac = request.form.get('fecha_nac') or None
         cursor.execute(query, (
@@ -74,12 +110,11 @@ def crear_persona():
             request.form.get('direccion'),
             request.form.get('tele'),
             request.form.get('movil'),
-            correo, fecha_nac, cedula
+            correo, cedula, fecha_nac
         ))
 
         new_persona_id = cursor.lastrowid
         conn.commit()
-        cursor.close(); conn.close()
 
         # 4) Redirección según haya admins o no
         if not has_admins:
@@ -89,45 +124,44 @@ def crear_persona():
             return redirect(url_for('gestion_personas'))
 
     except mysql.connector.Error as err:
-        if conn: conn.rollback()
-        if cursor: cursor.close()
-        if conn: conn.close()
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
 
         if err.errno == 1062:
             # Mensaje más específico según la clave única que saltó
             em = str(err).lower()
-            if 'cedula' in em:
-                flash('Error: La cédula ya está registrada.', 'error')
-            elif 'correo' in em:
+            if 'correo' in em:
                 flash('Error: El correo ya está registrado.', 'error')
+            elif 'cedula' in em:
+                flash('Error: La cédula ya está registrada.', 'error')
             else:
                 flash('Error: registro duplicado.', 'error')
         else:
             flash(f'Error al crear la persona: {err}', 'error')
-        return redirect(url_for('gestion_personas'))
-    except Exception as e:
-        if conn: conn.rollback()
-        if cursor: cursor.close()
-        if conn: conn.close()
-        flash(f'Error inesperado: {e}', 'error')
-        return redirect(url_for('gestion_personas'))
+        return render_personas_with_preserved_data()
+    except Exception as ex:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        flash(f'Error inesperado: {ex}', 'error')
+        return render_personas_with_preserved_data()
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
-def render_template_with_data_preserved(status):
-    """Helper function para renderizar el template con datos preservados"""
-    conn = get_db()
-    personas = []
-    if conn:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT Idpersona, nom1, apell1, correo, cedula, estado
-            FROM Persona
-            ORDER BY Idpersona DESC
-        """)
-        personas = cursor.fetchall()
-        cursor.close()
-        conn.close()
-    return render_template('gestion_personas.html', personas=personas) 
-    
 @app.route('/crear-primer-admin/<int:persona_id>', methods=['GET', 'POST'])
 def crear_primer_admin(persona_id):
     if request.method == 'POST':
@@ -269,15 +303,30 @@ def gestion_personas():
     conn = get_db()
     personas = []
     if conn:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT Idpersona, nom1, apell1, correo, cedula, estado
-            FROM Persona
-            ORDER BY Idpersona DESC
-        """)
-        personas = cursor.fetchall()
-        cursor.close()
-        conn.close()
+        cursor = None
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT Idpersona, nom1, apell1, correo, cedula, estado
+                FROM Persona
+                ORDER BY Idpersona DESC
+            """)
+            personas = cursor.fetchall()
+        except mysql.connector.Error as err:
+            print(f"Error al obtener personas: {err}")
+            flash('Error al cargar la lista de personas', 'error')
+            personas = []
+        finally:
+            if cursor:
+                try:
+                    cursor.close()
+                except:
+                    pass
+            if conn:
+                try:
+                    conn.close()
+                except:
+                    pass
     return render_template('gestion_personas.html', personas=personas)
 
 @app.route('/persona/editar/<int:id>', methods=['GET', 'POST'])
@@ -290,27 +339,30 @@ def editar_persona(id):
         flash('Error de conexión con la base de datos.', 'error')
         return redirect(url_for('gestion_personas'))
 
-    cursor = conn.cursor(dictionary=True)
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
 
-    if request.method == 'POST':
-        try:
-            cedula = request.form.get('cedula', '').strip()
-            msg_ced = validar_cedula(cedula)
-            if msg_ced:
-                flash(msg_ced, 'error')
+        if request.method == 'POST':
+            # chequear duplicado de correo (otra persona con mismo correo)
+            correo = request.form['correo']
+            cursor.execute("SELECT 1 FROM Persona WHERE correo = %s AND Idpersona <> %s", (correo, id))
+            if cursor.fetchone():
+                flash('El correo electrónico ya está registrado en otra persona.', 'error')
                 return redirect(url_for('editar_persona', id=id))
 
-            # chequear duplicado (otra persona con misma cédula)
+            # chequear duplicado de cedula (otra persona con misma cedula)
+            cedula = request.form['cedula']
             cursor.execute("SELECT 1 FROM Persona WHERE cedula = %s AND Idpersona <> %s", (cedula, id))
             if cursor.fetchone():
-                flash('La cédula ingresada ya está registrada en otra persona.', 'error')
+                flash('La cédula ya está registrada en otra persona.', 'error')
                 return redirect(url_for('editar_persona', id=id))
 
             update_query = """
                 UPDATE Persona
                    SET nom1=%s, nom2=%s, apell1=%s, apell2=%s,
                        direccion=%s, tele=%s, movil=%s, correo=%s,
-                       fecha_nac=%s, cedula=%s
+                       cedula=%s, fecha_nac=%s
                  WHERE Idpersona=%s
             """
             fecha_nac = request.form.get('fecha_nac') or None
@@ -319,34 +371,58 @@ def editar_persona(id):
                 request.form['apell1'], request.form.get('apell2'),
                 request.form.get('direccion'), request.form.get('tele'),
                 request.form.get('movil'), request.form['correo'],
-                fecha_nac, cedula, id
+                request.form['cedula'], fecha_nac, id
             ))
             conn.commit()
             flash('Persona actualizada correctamente.', 'success')
-        except mysql.connector.Error as err:
-            conn.rollback()
-            if err.errno == 1062:
-                em = str(err).lower()
-                if 'cedula' in em:
-                    flash('Error: La cédula ya está registrada.', 'error')
-                elif 'correo' in em:
-                    flash('Error: El correo ya está registrado.', 'error')
-                else:
-                    flash('Error: registro duplicado.', 'error')
+            return redirect(url_for('gestion_personas'))
+
+        # GET - Obtener datos de la persona
+        cursor.execute("SELECT * FROM Persona WHERE Idpersona = %s", (id,))
+        persona = cursor.fetchone()
+
+        if persona:
+            return render_template('editar_persona.html', persona=persona)
+        else:
+            flash('Persona no encontrada.', 'error')
+            return redirect(url_for('gestion_personas'))
+
+    except mysql.connector.Error as err:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        if err.errno == 1062:
+            em = str(err).lower()
+            if 'correo' in em:
+                flash('Error: El correo ya está registrado.', 'error')
+            elif 'cedula' in em:
+                flash('Error: La cédula ya está registrada.', 'error')
             else:
-                flash(f'Error al actualizar la persona: {err}', 'error')
+                flash('Error: registro duplicado.', 'error')
+        else:
+            flash(f'Error al actualizar la persona: {err}', 'error')
         return redirect(url_for('gestion_personas'))
-
-    # GET
-    cursor.execute("SELECT * FROM Persona WHERE Idpersona = %s", (id,))
-    persona = cursor.fetchone()
-    cursor.close(); conn.close()
-
-    if persona:
-        return render_template('editar_persona.html', persona=persona)
-    else:
-        flash('Persona no encontrada.', 'error')
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except:
+                pass
+        flash(f'Error inesperado: {e}', 'error')
         return redirect(url_for('gestion_personas'))
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except:
+                pass
+        if conn:
+            try:
+                conn.close()
+            except:
+                pass
 
 @app.route('/persona/inhabilitar/<int:id>')
 def inhabilitar_persona(id):

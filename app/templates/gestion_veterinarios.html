@@ -88,7 +88,9 @@ body::before {
                                    hover:border-blue-400 hover:bg-opacity-80 focus:bg-opacity-90">
                         <option value="">Seleccione una mascota...</option>
                         {% for m in mascotas %}
-                        <option value="{{ m.Idmascota }}">{{ m.nombre }}</option>
+                        <option value="{{ m.Idmascota }}">
+                            {{ m.nombre }} ({{ m.codigo }}) - Dueño: {{ m.nombre_dueno }}
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -142,6 +144,18 @@ body::before {
                                         Mascota Asignada
                                     </div>
                                 </th>
+                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-blue-400 border-opacity-50">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user mr-2 text-blue-200"></i>
+                                        Dueño
+                                    </div>
+                                </th>
+                                <th class="px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-blue-400 border-opacity-50">
+                                    <div class="flex items-center justify-center">
+                                        <i class="fas fa-cogs mr-2 text-blue-200"></i>
+                                        Acciones
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-blue-200 divide-opacity-30">
@@ -152,7 +166,10 @@ body::before {
                                         <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
                                             <i class="fas fa-user-md text-white text-xs"></i>
                                         </div>
-                                        <span class="text-sm font-bold text-gray-900">{{ asignacion.nombreu }} - {{ asignacion.nombre_persona }}</span>
+                                        <div>
+                                            <div class="text-sm font-bold text-gray-900">{{ asignacion.nombreu }}</div>
+                                            <div class="text-xs text-gray-600">{{ asignacion.nombre_persona }}</div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
@@ -160,13 +177,36 @@ body::before {
                                         <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
                                             <i class="fas fa-paw text-white text-xs"></i>
                                         </div>
-                                        <span class="text-sm font-bold text-gray-900">{{ asignacion.nombre_mascota }}</span>
+                                        <div>
+                                            <div class="text-sm font-bold text-gray-900">{{ asignacion.nombre_mascota }}</div>
+                                            <div class="text-xs text-gray-600">Código: {{ asignacion.codigo }}</div>
+                                        </div>
                                     </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-orange-500 to-red-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                            <i class="fas fa-user text-white text-xs"></i>
+                                        </div>
+                                        <div class="text-sm font-bold text-gray-900">{{ asignacion.nombre_dueno }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                    <form action="{{ url_for('desasignar_mascota', idmascota=asignacion.Idmascota) }}" method="POST" style="display: inline;" 
+                                          onsubmit="return confirm('¿Está seguro de que desea desasignar la mascota {{ asignacion.nombre_mascota }} del veterinario {{ asignacion.nombreu }}?')">
+                                        <button type="submit" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 
+                                                                     text-white font-bold py-1 px-3 rounded-lg shadow-md transform hover:scale-105 
+                                                                     transition-all duration-300 text-xs flex items-center justify-center
+                                                                     focus:ring-2 focus:ring-red-300 focus:ring-opacity-50">
+                                            <i class="fas fa-unlink mr-1"></i>
+                                            Desasignar
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="2" class="text-center py-8">
+                                <td colspan="4" class="text-center py-8">
                                     <div class="bg-gradient-to-br from-blue-100 to-indigo-100 bg-opacity-40 backdrop-blur-sm 
                                                 p-8 rounded-2xl border-2 border-blue-300 border-opacity-20 shadow-lg mx-4">
                                         <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-full mx-auto mb-4 

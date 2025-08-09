@@ -139,6 +139,7 @@ INSERT IGNORE INTO `perfil` (`Idperfil`, `descripc`, `estado`) VALUES
 -- Volcando estructura para tabla dbmascotas.persona
 CREATE TABLE IF NOT EXISTS `persona` (
   `Idpersona` int(11) NOT NULL AUTO_INCREMENT,
+  `cedula` VARCHAR(20) NOT NULL COLLATE 'utf8mb4_unicode_ci',
   `nom1` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `nom2` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `apell1` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -150,6 +151,7 @@ CREATE TABLE IF NOT EXISTS `persona` (
   `fecha_nac` date DEFAULT NULL,
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`Idpersona`),
+  UNIQUE INDEX `cedula` (`cedula`),
   UNIQUE KEY `correo` (`correo`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

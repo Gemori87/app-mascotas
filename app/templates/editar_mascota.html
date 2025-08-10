@@ -6,15 +6,26 @@
         <h1 class="text-2xl font-bold mb-6 text-gray-800">Editando Mascota: {{ mascota.nombre }}</h1>
         <form action="{{ url_for('editar_mascota', id=mascota.Idmascota) }}" method="POST" class="space-y-4">
             <div>
-                <label for="codigo" class="block text-sm font-medium text-gray-700">Código/Chip*</label>
-                <input type="text" name="codigo" id="codigo" required value="{{ mascota.codigo }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <label for="codigo" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-microchip mr-1 text-gray-600"></i>
+                    Código/Chip*
+                </label>
+                <input type="text" name="codigo" id="codigo" required value="{{ mascota.codigo }}" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             </div>
             <div>
-                <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre de la Mascota*</label>
-                <input type="text" name="nombre" id="nombre" required value="{{ mascota.nombre }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <label for="nombre" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-paw mr-1 text-gray-600"></i>
+                    Nombre de la Mascota*
+                </label>
+                <input type="text" name="nombre" id="nombre" required value="{{ mascota.nombre }}" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             </div>
             <div>
-                <label for="idduenio" class="block text-sm font-medium text-gray-700">Dueño*</label>
+                <label for="idduenio" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-user-md mr-1 text-gray-600"></i>
+                    Veterinario Responsable*
+                </label>
                 <select name="idduenio" id="idduenio" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     {% for duenio in duenios %}
                     <option value="{{ duenio.Idpersona }}" {% if duenio.Idpersona == mascota.idduenio %}selected{% endif %}>
@@ -24,7 +35,10 @@
                 </select>
             </div>
             <div>
-                <label for="idraza" class="block text-sm font-medium text-gray-700">Raza*</label>
+                <label for="idraza" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-dna mr-1 text-gray-600"></i>
+                    Raza*
+                </label>
                 <select name="idraza" id="idraza" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     {% for raza in razas %}
                     <option value="{{ raza.Idraza }}" {% if raza.Idraza == mascota.idraza %}selected{% endif %}>
@@ -34,12 +48,31 @@
                 </select>
             </div>
             <div>
-                <label for="fecha_nac" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                <input type="date" name="fecha_nac" id="fecha_nac" value="{{ mascota.fecha_nac.strftime('%Y-%m-%d') if mascota.fecha_nac else '' }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                <label for="fecha_nac" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-calendar mr-1 text-gray-600"></i>
+                    Fecha de Nacimiento
+                </label>
+                <input type="date" name="fecha_nac" id="fecha_nac" onchange="calcularEdad()" 
+                       value="{{ mascota.fecha_nac.strftime('%Y-%m-%d') if mascota.fecha_nac else '' }}" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             </div>
             <div>
-                <label for="caracteristicas" class="block text-sm font-medium text-gray-700">Características</label>
-                <textarea name="caracteristicas" id="caracteristicas" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ mascota.caracteristicas or '' }}</textarea>
+                <label for="edad_display" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-calendar-alt mr-1 text-gray-600"></i>
+                    Edad Calculada
+                </label>
+                <input type="text" id="edad_display" readonly 
+                       value="{% if mascota.edad is not none %}{{ mascota.edad }} año{{ 's' if mascota.edad != 1 else '' }}{% endif %}"
+                       placeholder="Se calculará automáticamente"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed">
+            </div>
+            <div>
+                <label for="caracteristicas" class="block text-sm font-medium text-gray-700">
+                    <i class="fas fa-clipboard-list mr-1 text-gray-600"></i>
+                    Características
+                </label>
+                <textarea name="caracteristicas" id="caracteristicas" rows="3" 
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ mascota.caracteristicas or '' }}</textarea>
             </div>
             <div class="flex justify-end space-x-4 pt-4">
                 <a href="{{ url_for('gestion_mascotas') }}" class="btn btn-secondary">Cancelar</a>
@@ -48,4 +81,48 @@
         </form>
     </div>
 </div>
+
+<script>
+function calcularEdad() {
+    const fechaNac = document.getElementById('fecha_nac').value;
+    const edadDisplay = document.getElementById('edad_display');
+    
+    if (fechaNac) {
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNac);
+        
+        if (nacimiento > hoy) {
+            edadDisplay.value = "Fecha futura no válida";
+            edadDisplay.style.color = "#dc2626"; // color rojo
+            return;
+        }
+        
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const diferenciaMeses = hoy.getMonth() - nacimiento.getMonth();
+        
+        if (diferenciaMeses < 0 || (diferenciaMeses === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        
+        if (edad === 0) {
+            // Calcular en meses para mascotas menores de 1 año
+            const meses = diferenciaMeses >= 0 ? diferenciaMeses : 12 + diferenciaMeses;
+            edadDisplay.value = meses + (meses === 1 ? " mes" : " meses");
+        } else {
+            edadDisplay.value = edad + (edad === 1 ? " año" : " años");
+        }
+        
+        edadDisplay.style.color = "#059669"; // color verde
+    } else {
+        edadDisplay.value = "";
+        edadDisplay.style.color = "#6b7280"; // color gris
+    }
+}
+
+// Calcular edad al cargar la página si hay fecha de nacimiento
+document.addEventListener('DOMContentLoaded', function() {
+    calcularEdad();
+});
+</script>
+
 {% endblock %}

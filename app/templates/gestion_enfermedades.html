@@ -208,8 +208,7 @@ body {
                                               {{ 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-300' if enfermedad.estado else 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:ring-green-300' }} 
                                               text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200
                                               focus:ring-4 focus:ring-opacity-50 min-w-max"
-                                       title="{% if enfermedad.estado %}Deshabilitar enfermedad{% else %}Habilitar enfermedad{% endif %}"
-                                       onclick="return confirm('¿Está seguro que desea {% if enfermedad.estado %}deshabilitar{% else %}habilitar{% endif %} la enfermedad &quot;{{ enfermedad.nombre }}&quot;?')">
+                                       title="{% if enfermedad.estado %}Deshabilitar enfermedad{% else %}Habilitar enfermedad{% endif %}">
                                         <i class="fas fa-{% if enfermedad.estado %}ban{% else %}check{% endif %} mr-2"></i>
                                         <span class="hidden lg:inline">{% if enfermedad.estado %}Deshabilitar{% else %}Habilitar{% endif %}</span>
                                     </a>

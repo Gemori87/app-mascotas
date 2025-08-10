@@ -11,181 +11,171 @@ body {
 }
 </style>
 
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Procedimiento</h1>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado elegante -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mb-4">
+            <i class="fas fa-stethoscope text-2xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Editar Procedimiento</h1>
+        <p class="text-lg text-gray-600">Modifique la información del procedimiento médico</p>
+    </div>
 
-<div class="max-w-2xl mx-auto">
-    <div class="card">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-yellow-600">Modificar Datos del Procedimiento</h2>
-            <a href="{{ url_for('gestion_procedimientos') }}" 
-               class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Columna del Formulario -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-edit text-blue-600"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">Datos del Procedimiento</h2>
+                    </div>
+                    <a href="{{ url_for('gestion_procedimientos') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver
+                    </a>
+                </div>
+                
+                <form method="POST" class="space-y-8">
+                    <div class="grid grid-cols-1 gap-8">
+                        <div class="relative">
+                            <label for="nombre" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-stethoscope text-blue-500 mr-2"></i>
+                                Nombre del Procedimiento <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <input type="text" name="nombre" id="nombre" required
+                                   value="{{ procedimiento.nombre }}"
+                                   placeholder="Ej: Vacunación, Desparasitación, Cirugía..."
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
+                                   maxlength="50">
+                            <div class="mt-2 flex items-center text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Máximo 50 caracteres - Ingrese el nombre específico del procedimiento
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-end space-x-4 pt-8 border-t border-gray-200">
+                        <a href="{{ url_for('gestion_procedimientos') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i> Cancelar
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-save mr-2"></i> Actualizar Procedimiento
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
         
-        <form method="POST" class="space-y-6">
-            <div class="grid grid-cols-1 gap-6">
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">ID del Procedimiento</h3>
-                    <p class="text-lg font-bold text-gray-900">#{{ procedimiento.Idprocedimiento }}</p>
-                </div>
-                
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del Procedimiento <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="nombre" id="nombre" required
-                           value="{{ procedimiento.nombre }}"
-                           placeholder="Ej: Vacunación, Desparasitación, Cirugía..."
-                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                           maxlength="50">
-                    <p class="mt-1 text-xs text-gray-500">Máximo 50 caracteres</p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">Estado Actual</h3>
-                    {% if procedimiento.estado %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Activo
-                        </span>
-                        <p class="text-xs text-gray-600 mt-1">Este procedimiento está disponible para usar</p>
-                    {% else %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Inactivo
-                        </span>
-                        <p class="text-xs text-gray-600 mt-1">Este procedimiento no está disponible para usar</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="flex justify-end space-x-3 pt-6 border-t">
-                <a href="{{ url_for('gestion_procedimientos') }}" 
-                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-                <button type="submit" class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
-                    <i class="fas fa-save"></i> Actualizar Procedimiento
-                </button>
-            </div>
-        </form>
-        
-        <!-- Información adicional -->
-        <div class="mt-6 pt-6 border-t">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Información del sistema -->
-                <div class="bg-blue-50 p-4 rounded-md">
-                    <h3 class="text-sm font-medium text-blue-700 mb-2">
-                        <i class="fas fa-info-circle"></i> Información
-                    </h3>
-                    <ul class="text-xs text-blue-600 space-y-1">
-                        <li>• El nombre debe ser único en el sistema</li>
-                        <li>• Los cambios se aplicarán inmediatamente</li>
-                        <li>• Para cambiar el estado, use el botón en la lista</li>
-                    </ul>
-                </div>
-                
-                <!-- Acciones rápidas -->
-                <div class="bg-yellow-50 p-4 rounded-md">
-                    <h3 class="text-sm font-medium text-yellow-700 mb-2">
-                        <i class="fas fa-tools"></i> Acciones Rápidas
-                    </h3>
-                    <div class="space-y-2">
-                        {% if session.user_profile == 'Administrador' %}
-                        <a href="{{ url_for('inhabilitar_procedimiento', id=procedimiento.Idprocedimiento) }}" 
-                           class="block text-xs {{ 'text-red-600 hover:text-red-500' if procedimiento.estado else 'text-green-600 hover:text-green-500' }}"
-                           onclick="return confirm('¿Está seguro que desea {% if procedimiento.estado %}deshabilitar{% else %}habilitar{% endif %} este procedimiento?')">
-                            • {% if procedimiento.estado %}Deshabilitar{% else %}Habilitar{% endif %} procedimiento
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('gestion_procedimientos') }}" 
-                           class="block text-xs text-gray-600 hover:text-gray-500">
-                            • Volver a la lista
-                        </a>
+        <!-- Columna de Información -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-info-circle text-blue-600"></i>
                     </div>
+                    <h3 class="text-xl font-bold text-gray-800">Información</h3>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- ID -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-hashtag text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">ID de Procedimiento</h4>
+                        </div>
+                        <p class="text-lg font-mono text-gray-900">#{{ procedimiento.Idprocedimiento }}</p>
+                    </div>
+                    
+                    <!-- Nombre Actual -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-stethoscope text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">Nombre</h4>
+                        </div>
+                        <p id="previewNombre" class="text-gray-900 font-medium">{{ procedimiento.nombre }}</p>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-toggle-on text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">Estado</h4>
+                        </div>
+                        {% if procedimiento.estado %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Activo
+                            </span>
+                            <p class="text-xs text-gray-600 mt-2">Este procedimiento está disponible para usar</p>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-times-circle mr-1"></i>
+                                Inactivo
+                            </span>
+                            <p class="text-xs text-gray-600 mt-2">Este procedimiento no está disponible para usar</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Información adicional -->
+                <div class="mt-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="text-base font-semibold text-blue-800 mb-2">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Información importante
+                    </h3>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Los campos marcados con (*) son obligatorios.</li>
+                        <li>• El nombre debe ser único en el sistema.</li>
+                        <li>• Los cambios se aplicarán inmediatamente después de guardar.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+</div>
 
 <script>
-// Validación del formulario
-document.querySelector('form').addEventListener('submit', function(e) {
-    const nombre = document.getElementById('nombre').value.trim();
-    
-    if (!nombre) {
-        e.preventDefault();
-        alert('El nombre del procedimiento es obligatorio.');
-        document.getElementById('nombre').focus();
-        return false;
-    }
-    
-    if (nombre.length < 2) {
-        e.preventDefault();
-        alert('El nombre debe tener al menos 2 caracteres.');
-        document.getElementById('nombre').focus();
-        return false;
-    }
-    
-    // Confirmar actualización
-    if (!confirm('¿Está seguro que desea actualizar este procedimiento?')) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Detectar cambios para mostrar alerta de cambios sin guardar
-let originalNombre = document.getElementById('nombre').value;
-let hasChanges = false;
-
-document.getElementById('nombre').addEventListener('input', function() {
-    hasChanges = this.value !== originalNombre;
-});
-
-// Alerta antes de salir sin guardar
-window.addEventListener('beforeunload', function(e) {
-    if (hasChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-
-// Validar caracteres en tiempo real
-document.getElementById('nombre').addEventListener('keypress', function(e) {
-    const char = String.fromCharCode(e.which);
-    const allowedChars = /[a-zA-Z0-9\sáéíóúñÁÉÍÓÚÑ\-()]/;
-    
-    if (!allowedChars.test(char)) {
-        e.preventDefault();
-    }
-});
-
-// Capitalizar primera letra al salir del campo
-document.getElementById('nombre').addEventListener('blur', function() {
-    const value = this.value.trim();
-    if (value) {
-        this.value = value.charAt(0).toUpperCase() + value.slice(1);
-    }
-});
-
-// Auto-focus y selección del texto
 document.addEventListener('DOMContentLoaded', function() {
-    const nombreInput = document.getElementById('nombre');
-    nombreInput.focus();
-    nombreInput.select();
-});
-
-// Navegación con teclado
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        if (hasChanges) {
-            if (confirm('¿Está seguro que desea salir sin guardar los cambios?')) {
-                window.location.href = "{{ url_for('gestion_procedimientos') }}";
-            }
+    document.getElementById('nombre').focus();
+    
+    // Validación en tiempo real
+    function validateForm() {
+        const nombre = document.getElementById('nombre').value.trim();
+        const submitBtn = document.querySelector('button[type="submit"]');
+        
+        if (nombre) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
-            window.location.href = "{{ url_for('gestion_procedimientos') }}";
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
     }
+    
+    document.getElementById('nombre').addEventListener('input', validateForm);
+    document.getElementById('nombre').addEventListener('change', validateForm);
+    
+    // Inicializar validación
+    validateForm();
+    
+    // Actualizar vista previa en tiempo real
+    document.getElementById('nombre').addEventListener('input', function() {
+        const value = this.value.trim();
+        document.getElementById('previewNombre').textContent = value || '{{ procedimiento.nombre }}';
+    });
+    
+    // Feedback visual al enviar
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualizando...';
+        submitBtn.disabled = true;
+    });
 });
 </script>
 {% endblock %}

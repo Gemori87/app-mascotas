@@ -736,14 +736,14 @@ def gestion_veterinarios():
         try:
             cursor = conn.cursor(dictionary=True)
 
-            # Usuarios veterinarios ya registrados
+            # Usuarios veterinarios ya registrados (solo perfil veterinario idperfil = 6)
             query_usuarios = """
                 SELECT u.Idusuario, u.nombreu, CONCAT(pe.nom1, ' ', pe.apell1) as nombre_persona,
                        pe.nom1, pe.apell1, pr.descripc, u.estado
                 FROM Usuario u
                 JOIN Persona pe ON u.idpersona = pe.Idpersona
                 JOIN Perfil pr ON u.idperfil = pr.Idperfil
-                WHERE u.estado = 1
+                WHERE u.estado = 1 AND u.idperfil = 6
                 ORDER BY pe.nom1, pe.apell1
             """
             cursor.execute(query_usuarios)
@@ -782,7 +782,7 @@ def gestion_veterinarios():
                 JOIN Usuario u ON m.idveterinario = u.Idusuario
                 JOIN Persona p ON u.idpersona = p.Idpersona
                 JOIN persona due ON m.idduenio = due.Idpersona
-                WHERE m.idveterinario IS NOT NULL AND m.estado = 1 AND u.estado = 1
+                WHERE m.idveterinario IS NOT NULL AND m.estado = 1 AND u.estado = 1 AND u.idperfil = 6
                 ORDER BY m.nombre
             """)
             asignaciones = cursor.fetchall()
@@ -2050,9 +2050,10 @@ def gestion_mascotas():
     duenios = []
     if conn:
         cursor = conn.cursor(dictionary=True)
-        # Query para obtener la lista de mascotas con nombres de raza y dueño
+        
+        # Query para obtener la lista de mascotas con nombres de raza, dueño y edad
         mascotas_query = """
-            SELECT m.Idmascota, m.nombre, m.estado, r.nombre AS raza_nombre, p.nom1 AS duenio_nombre
+            SELECT m.Idmascota, m.nombre, m.estado, m.edad, r.nombre AS raza_nombre, p.nom1 AS duenio_nombre
             FROM mascota m
             JOIN raza r ON m.idraza = r.Idraza
             JOIN persona p ON m.idduenio = p.Idpersona
@@ -2064,7 +2065,16 @@ def gestion_mascotas():
         # Queries para poblar los dropdowns del formulario de creación
         cursor.execute("SELECT Idraza, nombre FROM raza WHERE estado = 1 ORDER BY nombre ASC")
         razas = cursor.fetchall()
-        cursor.execute("SELECT Idpersona, nom1, apell1 FROM persona WHERE estado = 1 ORDER BY nom1 ASC")
+        
+        # Filtrar solo personas que tienen perfil de veterinario (idperfil = 6)
+        duenios_query = """
+            SELECT p.Idpersona, p.nom1, p.apell1 
+            FROM persona p
+            JOIN usuario u ON p.Idpersona = u.idpersona
+            WHERE p.estado = 1 AND u.idperfil = 6
+            ORDER BY p.nom1 ASC
+        """
+        cursor.execute(duenios_query)
         duenios = cursor.fetchall()
 
     return render_template('gestion_mascotas.html', mascotas=mascotas, razas=razas, duenios=duenios)
@@ -2075,14 +2085,24 @@ def crear_mascota():
     conn = get_db()
     try:
         cursor = conn.cursor()
-        query = """
-            INSERT INTO mascota (codigo, nombre, fecha_nac, caracteristicas, idraza, idduenio)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """
+        
+        # Calcular edad si se proporciona fecha de nacimiento
         fecha_nac = request.form.get('fecha_nac') or None
+        edad = None
+        if fecha_nac:
+            from datetime import datetime
+            fecha_nacimiento = datetime.strptime(fecha_nac, '%Y-%m-%d')
+            fecha_actual = datetime.now()
+            edad_timedelta = fecha_actual - fecha_nacimiento
+            edad = edad_timedelta.days // 365  # Edad en años
+        
+        query = """
+            INSERT INTO mascota (codigo, nombre, fecha_nac, caracteristicas, idraza, idduenio, edad)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
         cursor.execute(query, (
             request.form['codigo'], request.form['nombre'], fecha_nac,
-            request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio']
+            request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio'], edad
         ))
         conn.commit()
         flash('Mascota registrada exitosamente.', 'success')
@@ -2102,16 +2122,25 @@ def editar_mascota(id):
 
     if request.method == 'POST':
         try:
+            # Calcular edad si se proporciona fecha de nacimiento
+            fecha_nac = request.form.get('fecha_nac') or None
+            edad = None
+            if fecha_nac:
+                from datetime import datetime
+                fecha_nacimiento = datetime.strptime(fecha_nac, '%Y-%m-%d')
+                fecha_actual = datetime.now()
+                edad_timedelta = fecha_actual - fecha_nacimiento
+                edad = edad_timedelta.days // 365  # Edad en años
+            
             query = """
                 UPDATE mascota SET
                 codigo = %s, nombre = %s, fecha_nac = %s, caracteristicas = %s,
-                idraza = %s, idduenio = %s
+                idraza = %s, idduenio = %s, edad = %s
                 WHERE Idmascota = %s
             """
-            fecha_nac = request.form.get('fecha_nac') or None
             cursor.execute(query, (
                 request.form['codigo'], request.form['nombre'], fecha_nac,
-                request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio'], id
+                request.form.get('caracteristicas'), request.form['idraza'], request.form['idduenio'], edad, id
             ))
             conn.commit()
             flash('Datos de la mascota actualizados correctamente.', 'success')
@@ -2127,7 +2156,15 @@ def editar_mascota(id):
     cursor.execute("SELECT Idraza, nombre FROM raza WHERE estado = 1 ORDER BY nombre ASC")
     razas = cursor.fetchall()
     
-    cursor.execute("SELECT Idpersona, nom1, apell1 FROM persona WHERE estado = 1 ORDER BY nom1 ASC")
+    # Filtrar solo personas que tienen perfil de veterinario (idperfil = 6)
+    duenios_query = """
+        SELECT p.Idpersona, p.nom1, p.apell1 
+        FROM persona p
+        JOIN usuario u ON p.Idpersona = u.idpersona
+        WHERE p.estado = 1 AND u.idperfil = 6
+        ORDER BY p.nom1 ASC
+    """
+    cursor.execute(duenios_query)
     duenios = cursor.fetchall()
 
     if mascota:
@@ -2170,10 +2207,12 @@ def asignar_mascota():
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # Verificar que el usuario existe y está activo
-        cursor.execute("SELECT Idusuario, nombreu FROM Usuario WHERE Idusuario = %s AND estado = 1", (idusuario,))
+        # Verificar que el usuario existe, está activo y es veterinario (idperfil = 6)
+        cursor.execute("SELECT Idusuario, nombreu FROM Usuario WHERE Idusuario = %s AND estado = 1 AND idperfil = 6", (idusuario,))
         usuario = cursor.fetchone()
         if not usuario:
+            flash('El usuario seleccionado no es un veterinario válido.', 'error')
+            return redirect(url_for('gestion_veterinarios'))
             flash('El usuario veterinario seleccionado no es válido o está inactivo.', 'error')
             return redirect(url_for('gestion_veterinarios'))
         

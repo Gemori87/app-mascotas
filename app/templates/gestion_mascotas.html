@@ -84,15 +84,15 @@ body::before {
                 </div>
                 <div class="relative">
                     <label for="idduenio" class="block text-xs font-bold text-slate-700 mb-1">
-                        <i class="fas fa-user mr-1 text-slate-600"></i>
-                        Dueño*
+                        <i class="fas fa-user-md mr-1 text-slate-600"></i>
+                        Veterinario Responsable*
                     </label>
                     <select name="idduenio" id="idduenio" required 
                             class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
                                    backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
                                    text-gray-900 shadow-md transition-all duration-300 text-sm
                                    hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
-                        <option value="">Seleccione un dueño...</option>
+                        <option value="">Seleccione un veterinario...</option>
                         {% for duenio in duenios %}
                         <option value="{{ duenio.Idpersona }}">{{ duenio.nom1 }} {{ duenio.apell1 }}</option>
                         {% endfor %}
@@ -120,10 +120,22 @@ body::before {
                         Fecha de Nacimiento
                     </label>
                     <input type="date" name="fecha_nac" id="fecha_nac" 
+                           onchange="calcularEdad()"
                            class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-white bg-opacity-70 
                                   backdrop-blur-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-200 focus:ring-opacity-50 
                                   text-gray-900 shadow-md transition-all duration-300 text-sm
                                   hover:border-slate-400 hover:bg-opacity-80 focus:bg-opacity-90">
+                </div>
+                <div class="relative">
+                    <label for="edad_display" class="block text-xs font-bold text-slate-700 mb-1">
+                        <i class="fas fa-calendar-alt mr-1 text-slate-600"></i>
+                        Edad Calculada
+                    </label>
+                    <input type="text" id="edad_display" readonly 
+                           placeholder="Se calculará automáticamente"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 border-opacity-50 bg-gray-100 bg-opacity-70 
+                                  backdrop-blur-sm text-gray-700 shadow-md text-sm
+                                  cursor-not-allowed">
                 </div>
                 <div class="relative">
                     <label for="caracteristicas" class="block text-xs font-bold text-slate-700 mb-1">
@@ -172,7 +184,7 @@ body::before {
         </div>
     </div>
     <!-- Columna de la Tabla -->
-    <div class="lg:col-span-2">
+    <div class="lg:col-span-3">
         <div class="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl shadow-xl p-4 border border-slate-300 border-opacity-30 hover:shadow-2xl hover:bg-opacity-70 transition-all duration-300">
             <div class="flex justify-between items-center mb-4 border-b border-slate-300 border-opacity-50 pb-2">
                 <h2 class="text-lg font-black text-slate-800 flex items-center">
@@ -192,38 +204,44 @@ body::before {
 
             {% if mascotas %}
             <div class="overflow-hidden rounded-lg shadow-lg border border-slate-300 border-opacity-30">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white bg-opacity-80 backdrop-blur-sm">
+                <div class="w-full">
+                    <table class="w-full bg-white bg-opacity-80 backdrop-blur-sm table-fixed">
                         <thead class="bg-gradient-to-r from-slate-600 via-gray-600 to-slate-700 text-white">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                <th class="px-3 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 w-1/5">
                                     <div class="flex items-center">
                                         <i class="fas fa-paw mr-2 text-slate-200"></i>
-                                        Nombre
+                                        <span class="hidden sm:inline">Nombre</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                <th class="px-3 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 hidden md:table-cell w-1/6">
                                     <div class="flex items-center">
                                         <i class="fas fa-dna mr-2 text-slate-200"></i>
-                                        Raza
+                                        <span class="hidden lg:inline">Raza</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                <th class="px-3 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 w-1/6">
                                     <div class="flex items-center">
-                                        <i class="fas fa-user mr-2 text-slate-200"></i>
-                                        Dueño
+                                        <i class="fas fa-calendar-alt mr-2 text-slate-200"></i>
+                                        <span class="hidden sm:inline">Edad</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                <th class="px-3 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 hidden lg:table-cell w-1/5">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user-md mr-2 text-slate-200"></i>
+                                        <span class="hidden xl:inline">Veterinario</span>
+                                    </div>
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 w-1/6">
                                     <div class="flex items-center">
                                         <i class="fas fa-toggle-on mr-2 text-slate-200"></i>
-                                        Estado
+                                        <span class="hidden sm:inline">Estado</span>
                                     </div>
                                 </th>
-                                <th class="px-4 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50">
+                                <th class="px-3 py-3 text-center text-xs font-black uppercase tracking-wider border-b border-slate-400 border-opacity-50 w-1/4">
                                     <div class="flex items-center justify-center">
-                                        <i class="fas fa-cogs mr-2 text-slate-200"></i>
-                                        Acciones
+                                        <i class="fas fa-cogs mr-1 text-slate-200"></i>
+                                        <span class="hidden md:inline">Acciones</span>
                                     </div>
                                 </th>
                             </tr>
@@ -231,67 +249,93 @@ body::before {
                         <tbody class="divide-y divide-slate-200 divide-opacity-30">
                             {% for mascota in mascotas %}
                             <tr class="hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-50 hover:bg-opacity-60 transition-all duration-300 group">
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <!-- Nombre -->
+                                <td class="px-3 py-3">
                                     <div class="flex items-center">
-                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg shadow-sm mr-2 group-hover:shadow-md transition-all duration-300">
                                             <i class="fas fa-paw text-white text-xs"></i>
                                         </div>
                                         <span class="text-sm font-bold text-gray-900">{{ mascota.nombre }}</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <!-- Raza (oculta en pantallas pequeñas) -->
+                                <td class="px-3 py-3 hidden md:table-cell">
                                     <div class="flex items-center">
-                                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-1.5 rounded-lg shadow-sm mr-2 group-hover:shadow-md transition-all duration-300">
                                             <i class="fas fa-dna text-white text-xs"></i>
                                         </div>
                                         <span class="text-sm font-bold text-gray-900">{{ mascota.raza_nombre or 'Sin raza' }}</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <!-- Edad -->
+                                <td class="px-3 py-3">
                                     <div class="flex items-center">
-                                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-1.5 rounded-lg shadow-md mr-2 group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
-                                            <i class="fas fa-user text-white text-xs"></i>
+                                        <div class="bg-gradient-to-br from-orange-500 to-red-600 p-1.5 rounded-lg shadow-sm mr-2 group-hover:shadow-md transition-all duration-300">
+                                            <i class="fas fa-calendar-alt text-white text-xs"></i>
                                         </div>
-                                        <span class="text-sm font-bold text-gray-900">{{ mascota.duenio_nombre or 'Sin dueño' }}</span>
+                                        <span class="text-sm font-bold text-gray-900">
+                                            {% if mascota.edad is not none and mascota.edad is not false %}
+                                                {% if mascota.edad == 0 %}
+                                                    <span class="hidden sm:inline">Menos de </span>1<span class="hidden sm:inline"> año</span><span class="sm:hidden">a</span>
+                                                {% else %}
+                                                    {{ mascota.edad }}<span class="hidden sm:inline"> año{{ 's' if mascota.edad != 1 else '' }}</span><span class="sm:hidden">a</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="hidden sm:inline">Sin calcular</span><span class="sm:hidden">N/A</span>
+                                            {% endif %}
+                                        </span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <!-- Veterinario (oculta en pantallas pequeñas y medianas) -->
+                                <td class="px-3 py-3 hidden lg:table-cell">
+                                    <div class="flex items-center">
+                                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-1.5 rounded-lg shadow-sm mr-2 group-hover:shadow-md transition-all duration-300">
+                                            <i class="fas fa-user-md text-white text-xs"></i>
+                                        </div>
+                                        <span class="text-sm font-bold text-gray-900">{{ mascota.duenio_nombre or 'Sin veterinario' }}</span>
+                                    </div>
+                                </td>
+                                <!-- Estado -->
+                                <td class="px-3 py-3">
                                     <div class="flex items-center">
                                         {% if mascota.estado %}
-                                            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                            <div class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center group-hover:shadow-md transition-all duration-300">
                                                 <i class="fas fa-check-circle mr-1"></i>
-                                                Activa
+                                                <span class="hidden sm:inline">Activa</span>
                                             </div>
                                         {% else %}
-                                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm flex items-center group-hover:shadow-md transition-all duration-300">
                                                 <i class="fas fa-times-circle mr-1"></i>
-                                                Inactiva
+                                                <span class="hidden sm:inline">Inactiva</span>
                                             </div>
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <!-- Acciones -->
+                                <td class="px-3 py-3 text-center">
                                     <div class="flex justify-center space-x-2">
                                         <a href="{{ url_for('editar_mascota', id=mascota.Idmascota) }}" 
                                            class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 
-                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
-                                                  transition-all duration-300 group/edit text-xs font-bold">
-                                            <i class="fas fa-edit mr-1 group-hover/edit:rotate-12 transition-transform duration-300"></i>
-                                            Editar
+                                                  text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 
+                                                  transition-all duration-300 text-xs font-bold"
+                                           title="Editar mascota">
+                                            <i class="fas fa-edit"></i>
+                                            <span class="hidden md:inline ml-1">Editar</span>
                                         </a>
                                         <a href="{{ url_for('inhabilitar_mascota', id=mascota.Idmascota) }}" 
                                            class="{{ 'bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800' if mascota.estado else 'bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800' }} 
-                                                  text-white px-3 py-1.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
-                                                  transition-all duration-300 group/toggle text-xs font-bold">
-                                            <i class="fas {{ 'fa-ban' if mascota.estado else 'fa-check' }} mr-1 group-hover/toggle:rotate-12 transition-transform duration-300"></i>
-                                            {{ 'Inhabilitar' if mascota.estado else 'Habilitar' }}
+                                                  text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 
+                                                  transition-all duration-300 text-xs font-bold"
+                                           title="{{ 'Inhabilitar' if mascota.estado else 'Habilitar' }} mascota">
+                                            <i class="fas {{ 'fa-ban' if mascota.estado else 'fa-check' }}"></i>
+                                            <span class="hidden md:inline ml-1">{{ 'Inhabilitar' if mascota.estado else 'Habilitar' }}</span>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center py-8">
+                                <td colspan="6" class="text-center py-8">
                                     <div class="bg-gradient-to-br from-slate-100 to-gray-100 bg-opacity-40 backdrop-blur-sm 
                                                 p-8 rounded-2xl border-2 border-slate-300 border-opacity-20 shadow-lg mx-4">
                                         <div class="bg-gradient-to-br from-slate-500 to-gray-600 p-4 rounded-full mx-auto mb-4 
@@ -324,4 +368,43 @@ body::before {
         </div>
     </div>
 </div>
+
+<script>
+function calcularEdad() {
+    const fechaNac = document.getElementById('fecha_nac').value;
+    const edadDisplay = document.getElementById('edad_display');
+    
+    if (fechaNac) {
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNac);
+        
+        if (nacimiento > hoy) {
+            edadDisplay.value = "Fecha futura no válida";
+            edadDisplay.style.color = "#dc2626"; // color rojo
+            return;
+        }
+        
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const diferenciaMeses = hoy.getMonth() - nacimiento.getMonth();
+        
+        if (diferenciaMeses < 0 || (diferenciaMeses === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+        
+        if (edad === 0) {
+            // Calcular en meses para mascotas menores de 1 año
+            const meses = diferenciaMeses >= 0 ? diferenciaMeses : 12 + diferenciaMeses;
+            edadDisplay.value = meses + (meses === 1 ? " mes" : " meses");
+        } else {
+            edadDisplay.value = edad + (edad === 1 ? " año" : " años");
+        }
+        
+        edadDisplay.style.color = "#059669"; // color verde
+    } else {
+        edadDisplay.value = "";
+        edadDisplay.style.color = "#6b7280"; // color gris
+    }
+}
+</script>
+
 {% endblock %}

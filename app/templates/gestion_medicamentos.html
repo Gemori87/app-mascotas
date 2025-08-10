@@ -186,8 +186,7 @@ body {
                                               {{ 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-300' if medicamento.estado else 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:ring-green-300' }} 
                                               text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200
                                               focus:ring-4 focus:ring-opacity-50 min-w-max"
-                                       title="{% if medicamento.estado %}Deshabilitar medicamento{% else %}Habilitar medicamento{% endif %}"
-                                       onclick="return confirm('¿Está seguro que desea {% if medicamento.estado %}deshabilitar{% else %}habilitar{% endif %} el medicamento &quot;{{ medicamento.nombre }}&quot;?')">
+                                       title="{% if medicamento.estado %}Deshabilitar medicamento{% else %}Habilitar medicamento{% endif %}">
                                         <i class="fas fa-{% if medicamento.estado %}ban{% else %}check{% endif %} mr-2"></i>
                                         <span class="hidden lg:inline">{% if medicamento.estado %}Deshabilitar{% else %}Habilitar{% endif %}</span>
                                     </a>

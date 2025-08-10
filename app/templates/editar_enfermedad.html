@@ -11,210 +11,206 @@ body {
 }
 </style>
 
-<h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Enfermedad</h1>
+<div class="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado elegante -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full mb-4">
+            <i class="fas fa-virus text-2xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Editar Enfermedad</h1>
+        <p class="text-lg text-gray-600">Modifique la información de la enfermedad</p>
+    </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Columna del Formulario -->
-    <div class="lg:col-span-2">
-        <div class="card">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-yellow-600">Modificar Datos de la Enfermedad</h2>
-                <a href="{{ url_for('gestion_enfermedades') }}" 
-                   class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-            </div>
-            
-            <form method="POST" class="space-y-6">
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre de la Enfermedad <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="nombre" id="nombre" required
-                               value="{{ enfermedad.nombre }}"
-                               placeholder="Ej: Parvovirus, Moquillo, Sarna, etc."
-                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                               maxlength="100">
-                        <p class="mt-1 text-xs text-gray-500">Ingrese el nombre específico de la enfermedad</p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Columna del Formulario -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-edit text-yellow-600"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800">Datos de la Enfermedad</h2>
+                    </div>
+                    <a href="{{ url_for('gestion_enfermedades') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver
+                    </a>
+                </div>
+                
+                <form method="POST" class="space-y-8">
+                    <div class="grid grid-cols-1 gap-8">
+                        <div class="relative">
+                            <label for="nombre" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-virus text-yellow-500 mr-2"></i>
+                                Nombre de la Enfermedad <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <input type="text" name="nombre" id="nombre" required
+                                   value="{{ enfermedad.nombre }}"
+                                   placeholder="Ej: Parvovirus, Moquillo, Sarna, etc."
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
+                                   maxlength="100">
+                            <div class="mt-2 flex items-center text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Ingrese el nombre específico de la enfermedad
+                            </div>
+                        </div>
+                        
+                        <div class="relative">
+                            <label for="observaciones" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-notes-medical text-yellow-500 mr-2"></i>
+                                Observaciones
+                            </label>
+                            <textarea name="observaciones" id="observaciones" rows="4"
+                                      placeholder="Descripción adicional, síntomas principales, tratamientos comunes, etc."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white resize-none"
+                                      maxlength="255">{{ enfermedad.observaciones or '' }}</textarea>
+                            <div class="mt-2 flex justify-between items-center text-xs text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Información adicional opcional
+                                </div>
+                                <span id="charCount" class="font-medium">{{ (enfermedad.observaciones or '')|length }}</span>/255
+                            </div>
+                        </div>
                     </div>
                     
-                    <div>
-                        <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-2">
-                            Observaciones
-                        </label>
-                        <textarea name="observaciones" id="observaciones" rows="4"
-                                  placeholder="Descripción adicional, síntomas principales, tratamientos comunes, etc."
-                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                                  maxlength="255">{{ enfermedad.observaciones or '' }}</textarea>
-                        <p class="mt-1 text-xs text-gray-500">
-                            <span id="charCount">{{ (enfermedad.observaciones or '')|length }}</span>/255 caracteres
+                    <div class="flex items-center justify-end space-x-4 pt-8 border-t border-gray-200">
+                        <a href="{{ url_for('gestion_enfermedades') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i> Cancelar
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-save mr-2"></i> Actualizar Enfermedad
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Columna de Información -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-info-circle text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Información</h3>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- ID -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-hashtag text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">ID de Enfermedad</h4>
+                        </div>
+                        <p class="text-lg font-mono text-gray-900">#{{ enfermedad.Idenfermedad }}</p>
+                    </div>
+                    
+                    <!-- Nombre Actual -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-virus text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">Nombre</h4>
+                        </div>
+                        <p id="previewNombre" class="text-gray-900 font-medium">{{ enfermedad.nombre }}</p>
+                    </div>
+                    
+                    <!-- Observaciones -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-notes-medical text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">Observaciones</h4>
+                        </div>
+                        <p id="previewObservaciones" class="text-gray-900 text-sm leading-relaxed">
+                            {{ enfermedad.observaciones or 'Sin observaciones' }}
                         </p>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-toggle-on text-gray-600 mr-2"></i>
+                            <h4 class="font-semibold text-gray-700">Estado</h4>
+                        </div>
+                        {% if enfermedad.estado %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Activa
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-times-circle mr-1"></i>
+                                Inactiva
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <div class="flex justify-end space-x-3 pt-6 border-t">
-                    <a href="{{ url_for('gestion_enfermedades') }}" 
-                       class="btn bg-gray-500 hover:bg-gray-600 text-white">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn bg-yellow-500 hover:bg-yellow-600 text-white">
-                        <i class="fas fa-save"></i> Actualizar Enfermedad
-                    </button>
+                <!-- Información adicional -->
+                <div class="mt-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="text-base font-semibold text-blue-800 mb-2">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Información importante
+                    </h3>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>• Los campos marcados con (*) son obligatorios.</li>
+                        <li>• El nombre debe ser único en el sistema.</li>
+                        <li>• Los cambios se aplicarán inmediatamente después de guardar.</li>
+                    </ul>
                 </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Columna de Vista Previa -->
-    <div class="lg:col-span-1">
-        <div class="card sticky top-6">
-            <h3 class="text-lg font-semibold text-blue-600 mb-4">Vista Previa</h3>
-            
-            <div class="space-y-4">
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">ID</h4>
-                    <p class="text-gray-900">#{{ enfermedad.Idenfermedad }}</p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Nombre</h4>
-                    <p id="previewNombre" class="text-gray-900">{{ enfermedad.nombre }}</p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Observaciones</h4>
-                    <p id="previewObservaciones" class="text-gray-900 text-sm">
-                        {{ enfermedad.observaciones or 'Sin observaciones' }}
-                    </p>
-                </div>
-                
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <h4 class="font-medium text-gray-700 mb-2">Estado Actual</h4>
-                    {% if enfermedad.estado %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Activa
-                        </span>
-                    {% else %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Inactiva
-                        </span>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Información de ayuda -->
-            <div class="mt-6 bg-yellow-50 p-4 rounded-md">
-                <h4 class="text-sm font-medium text-yellow-700 mb-2">
-                    <i class="fas fa-exclamation-triangle"></i> Importante
-                </h4>
-                <ul class="text-xs text-yellow-600 space-y-1">
-                    <li>• El nombre debe ser único</li>
-                    <li>• Los cambios se aplicarán inmediatamente</li>
-                    <li>• No se puede cambiar el estado desde aquí</li>
-                    <li>• Use el botón de estado en la lista principal</li>
-                </ul>
-            </div>
-            
-            <!-- Historial (si hay registros asociados) -->
-            <div class="mt-6 bg-blue-50 p-4 rounded-md">
-                <h4 class="text-sm font-medium text-blue-700 mb-2">
-                    <i class="fas fa-history"></i> Información del Sistema
-                </h4>
-                <ul class="text-xs text-blue-600 space-y-1">
-                    <li>• Creado: Sistema</li>
-                    <li>• ID único: {{ enfermedad.Idenfermedad }}</li>
-                    <li>• Estado controlado por administrador</li>
-                </ul>
             </div>
         </div>
     </div>
 </div>
+</div>
 
 <script>
-// Actualizar vista previa en tiempo real
-document.getElementById('nombre').addEventListener('input', function() {
-    const value = this.value.trim();
-    document.getElementById('previewNombre').textContent = value || 'Ingrese el nombre...';
-    document.getElementById('previewNombre').className = value ? 'text-gray-900' : 'text-gray-600 italic';
-});
-
-document.getElementById('observaciones').addEventListener('input', function() {
-    const value = this.value.trim();
-    document.getElementById('previewObservaciones').textContent = value || 'Sin observaciones';
-    document.getElementById('previewObservaciones').className = value ? 'text-gray-900 text-sm' : 'text-gray-600 italic text-sm';
-    
-    // Actualizar contador de caracteres
-    document.getElementById('charCount').textContent = this.value.length;
-});
-
-// Validación antes de enviar
-document.querySelector('form').addEventListener('submit', function(e) {
-    const nombre = document.getElementById('nombre').value.trim();
-    
-    if (!nombre) {
-        e.preventDefault();
-        alert('El nombre de la enfermedad es obligatorio.');
-        document.getElementById('nombre').focus();
-        return false;
-    }
-    
-    if (nombre.length < 2) {
-        e.preventDefault();
-        alert('El nombre debe tener al menos 2 caracteres.');
-        document.getElementById('nombre').focus();
-        return false;
-    }
-    
-    // Confirmar actualización
-    if (!confirm('¿Está seguro que desea actualizar esta enfermedad?')) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Validar caracteres especiales en el nombre
-document.getElementById('nombre').addEventListener('keypress', function(e) {
-    const char = String.fromCharCode(e.which);
-    const allowedChars = /[a-zA-Z0-9\sáéíóúñÁÉÍÓÚÑ\-()]/;
-    
-    if (!allowedChars.test(char)) {
-        e.preventDefault();
-    }
-});
-
-// Detectar cambios para mostrar alerta de cambios sin guardar
-let originalData = {
-    nombre: document.getElementById('nombre').value,
-    observaciones: document.getElementById('observaciones').value
-};
-
-let hasChanges = false;
-
-function detectChanges() {
-    const currentData = {
-        nombre: document.getElementById('nombre').value,
-        observaciones: document.getElementById('observaciones').value
-    };
-    
-    hasChanges = JSON.stringify(originalData) !== JSON.stringify(currentData);
-}
-
-document.getElementById('nombre').addEventListener('input', detectChanges);
-document.getElementById('observaciones').addEventListener('input', detectChanges);
-
-// Alerta antes de salir sin guardar
-window.addEventListener('beforeunload', function(e) {
-    if (hasChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-
-// Auto-foco en el primer campo
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('nombre').focus();
-    document.getElementById('nombre').select();
+    
+    // Validación en tiempo real
+    function validateForm() {
+        const nombre = document.getElementById('nombre').value.trim();
+        const submitBtn = document.querySelector('button[type="submit"]');
+        
+        if (nombre) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    document.getElementById('nombre').addEventListener('input', validateForm);
+    document.getElementById('nombre').addEventListener('change', validateForm);
+    
+    // Inicializar validación
+    validateForm();
+    
+    // Actualizar vista previa en tiempo real
+    document.getElementById('nombre').addEventListener('input', function() {
+        const value = this.value.trim();
+        document.getElementById('previewNombre').textContent = value || '{{ enfermedad.nombre }}';
+    });
+
+    document.getElementById('observaciones').addEventListener('input', function() {
+        const value = this.value.trim();
+        document.getElementById('previewObservaciones').textContent = value || 'Sin observaciones';
+        
+        // Actualizar contador de caracteres
+        document.getElementById('charCount').textContent = this.value.length;
+    });
+    
+    // Feedback visual al enviar
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualizando...';
+        submitBtn.disabled = true;
+    });
 });
 </script>
 {% endblock %}

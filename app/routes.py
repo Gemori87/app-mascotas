@@ -957,7 +957,7 @@ def forgot_password():
             reset_url = url_for('reset_password', token=token, _external=True)
             send_email(
                 correo,
-                "Restablecer contraseña - App Mascotas",
+                "Restablecer contraseña - MediPet",
                 f"""
                 <p>Hola,</p>
                 <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>

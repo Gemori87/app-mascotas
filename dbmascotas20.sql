@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS `mascota` (
   `codigo` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
   `nombre` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fecha_nac` date DEFAULT NULL,
+  `edad` int(11) DEFAULT NULL,
   `caracteristicas` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `estado` tinyint(1) DEFAULT 1,
   `idraza` int(11) DEFAULT NULL,

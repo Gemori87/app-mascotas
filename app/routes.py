@@ -1920,10 +1920,17 @@ def ver_enfermedad_mascota(id):
     
     try:
         cursor.execute("""
-            SELECT me.*, m.nombre as nombre_mascota, m.raza, m.edad, m.peso,
-                   te.nombre as nombre_enfermedad, te.observaciones as observaciones_enfermedad
+            SELECT me.*, m.nombre as nombre_mascota, r.nombre as raza, 
+                   TIMESTAMPDIFF(YEAR, m.fecha_nac, CURDATE()) as edad,
+                   te.nombre as nombre_enfermedad, te.observaciones as observaciones_enfermedad,
+                   (SELECT c.peso FROM consulta c 
+                    WHERE c.idhistoria = (SELECT h.Idhistoria FROM historia_clinica h WHERE h.idmascota = m.Idmascota LIMIT 1)
+                    AND c.peso IS NOT NULL 
+                    ORDER BY c.fecha_consulta DESC, c.Idconsulta DESC 
+                    LIMIT 1) as peso
             FROM mascotaenfermedad me
             JOIN mascota m ON me.idmascota = m.Idmascota
+            JOIN raza r ON m.idraza = r.Idraza
             JOIN tipoenfermedad te ON me.idenfermedad = te.Idenfermedad
             WHERE me.id = %s
         """, (id,))
@@ -2061,7 +2068,9 @@ def gestion_mascotas():
         
         # Query para obtener la lista de mascotas con nombres de raza, dueño y edad
         mascotas_query = """
-            SELECT m.Idmascota, m.nombre, m.estado, m.edad, r.nombre AS raza_nombre, p.nom1 AS duenio_nombre
+            SELECT m.Idmascota, m.nombre, m.estado, 
+                   TIMESTAMPDIFF(YEAR, m.fecha_nac, CURDATE()) as edad, 
+                   r.nombre AS raza_nombre, p.nom1 AS duenio_nombre
             FROM mascota m
             JOIN raza r ON m.idraza = r.Idraza
             JOIN persona p ON m.idduenio = p.Idpersona

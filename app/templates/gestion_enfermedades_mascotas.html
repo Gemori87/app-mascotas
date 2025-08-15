@@ -104,7 +104,7 @@ body {
                               text-white font-bold py-2 px-3 rounded-lg shadow-lg transform hover:scale-105 
                               transition-all duration-300 flex items-center justify-center
                               focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50">
-                        <i class="fas fa-times"></i>
+                        <i class="fas fa-times">X</i>
                     </a>
                 </div>
             </form>
@@ -273,14 +273,14 @@ body {
                                                   text-white p-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
                                                   transition-all duration-300 group/view"
                                            title="Ver detalles">
-                                            <i class="fas fa-eye group-hover/view:scale-110 transition-transform duration-300"></i>
+                                            <i class="fas fa-eye group-hover/view:scale-110 transition-transform duration-300">Ver detalles</i>
                                         </a>
                                         <a href="{{ url_for('editar_enfermedad_mascota', id=em.id) }}" 
                                            class="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 
                                                   text-white p-2 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-110 
                                                   transition-all duration-300 group/edit"
                                            title="Editar">
-                                            <i class="fas fa-edit group-hover/edit:rotate-12 transition-transform duration-300"></i>
+                                            <i class="fas fa-edit group-hover/edit:rotate-12 transition-transform duration-300">Editar</i>
                                         </a>
                                         {% if session.user_profile == 'Administrador' %}
                                         <a href="{{ url_for('eliminar_enfermedad_mascota', id=em.id) }}" 
@@ -289,7 +289,7 @@ body {
                                                   transition-all duration-300 group/delete"
                                            title="Eliminar"
                                            onclick="return confirm('¿Está seguro que desea eliminar este registro de enfermedad? Esta acción no se puede deshacer.')">
-                                            <i class="fas fa-trash group-hover/delete:rotate-12 transition-transform duration-300"></i>
+                                            <i class="fas fa-trash group-hover/delete:rotate-12 transition-transform duration-300">Deshabilitar</i>
                                         </a>
                                         {% endif %}
                                     </div>

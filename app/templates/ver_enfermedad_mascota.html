@@ -119,13 +119,6 @@ body {
                        class="btn bg-green-500 hover:bg-green-600 text-white text-sm">
                         <i class="fas fa-plus"></i> Nuevo Registro
                     </a>
-                    {% if session.user_profile == 'Administrador' %}
-                    <a href="{{ url_for('eliminar_enfermedad_mascota', id=enfermedad_mascota.id) }}" 
-                       class="btn bg-red-500 hover:bg-red-600 text-white text-sm"
-                       onclick="return confirm('¿Está seguro que desea eliminar este registro? Esta acción no se puede deshacer.')">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </a>
-                    {% endif %}
                 </div>
             </div>
         </div>

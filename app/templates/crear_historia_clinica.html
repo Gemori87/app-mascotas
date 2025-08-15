@@ -1,0 +1,264 @@
+{% extends "layout.html" %}
+
+{% block title %}Crear Historia Clínica{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-8">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center">
+            <a href="{{ url_for('gestion_historias_clinicas') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200 mr-4">
+                <i class="fas fa-arrow-left mr-2"></i> Volver
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Nueva Historia Clínica</h1>
+                <p class="text-lg text-gray-600">Crear expediente médico para una mascota</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="space-y-8">
+        <!-- Selección de Mascota -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center mb-6">
+                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-paw text-blue-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Información del Paciente</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="idmascota" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-search text-blue-500 mr-2"></i>
+                        Seleccionar Mascota <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <select name="idmascota" id="idmascota" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Seleccione una mascota...</option>
+                        {% for mascota in mascotas %}
+                        <option value="{{ mascota.Idmascota }}" 
+                                data-propietario="{{ mascota.nombre_propietario }}"
+                                data-raza="{{ mascota.raza }}"
+                                data-edad="{{ mascota.edad }}"
+                                data-sexo="{{ mascota.sexo }}">
+                            {{ mascota.nombre }} ({{ mascota.codigo }}) - {{ mascota.nombre_propietario }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Información de la mascota seleccionada -->
+                <div id="info-mascota" class="md:col-span-2 hidden bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-blue-800 mb-3">Información de la Mascota</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="font-medium text-blue-700">Propietario:</span>
+                            <p id="mascota-propietario" class="text-blue-600"></p>
+                        </div>
+                        <div>
+                            <span class="font-medium text-blue-700">Raza:</span>
+                            <p id="mascota-raza" class="text-blue-600"></p>
+                        </div>
+                        <div>
+                            <span class="font-medium text-blue-700">Edad:</span>
+                            <p id="mascota-edad" class="text-blue-600"></p>
+                        </div>
+                        <div>
+                            <span class="font-medium text-blue-700">Sexo:</span>
+                            <p id="mascota-sexo" class="text-blue-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Inicial de la Historia -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center mb-6">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-clipboard-list text-green-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Datos de la Historia Clínica</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="fecha_apertura" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-calendar text-green-500 mr-2"></i>
+                        Fecha de Apertura <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <input type="date" name="fecha_apertura" id="fecha_apertura" required
+                           value="{{ fecha_actual }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label for="veterinario_responsable" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-user-md text-green-500 mr-2"></i>
+                        Veterinario Responsable
+                    </label>
+                    <select name="veterinario_responsable" id="veterinario_responsable"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="">Seleccionar veterinario...</option>
+                        {% for veterinario in veterinarios %}
+                        <option value="{{ veterinario.Idusuario }}" 
+                                {% if veterinario.Idusuario == session.user_id %}selected{% endif %}>
+                            {{ veterinario.nombre_completo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Motivo de Apertura -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center mb-6">
+                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-notes-medical text-yellow-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Motivo de Apertura</h2>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label for="motivo_apertura" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-comment-medical text-yellow-500 mr-2"></i>
+                        Descripción del Motivo <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <textarea name="motivo_apertura" id="motivo_apertura" rows="4" required
+                              placeholder="Describa el motivo por el cual se abre esta historia clínica..."
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="estado_general" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-heartbeat text-yellow-500 mr-2"></i>
+                            Estado General Inicial
+                        </label>
+                        <select name="estado_general" id="estado_general"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="">Seleccionar estado...</option>
+                            <option value="Excelente">Excelente</option>
+                            <option value="Bueno">Bueno</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Malo">Malo</option>
+                            <option value="Crítico">Crítico</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="prioridad" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                            Prioridad del Caso
+                        </label>
+                        <select name="prioridad" id="prioridad"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="Rutina">Rutina</option>
+                            <option value="Urgente">Urgente</option>
+                            <option value="Emergencia">Emergencia</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones Iniciales -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center mb-6">
+                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-sticky-note text-purple-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">Observaciones Iniciales</h2>
+            </div>
+            
+            <div>
+                <label for="observaciones_iniciales" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-pen text-purple-500 mr-2"></i>
+                    Notas y Observaciones
+                </label>
+                <textarea name="observaciones_iniciales" id="observaciones_iniciales" rows="4"
+                          placeholder="Observaciones adicionales, antecedentes relevantes, comportamiento del animal, etc..."
+                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"></textarea>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end space-x-4">
+            <a href="{{ url_for('gestion_historias_clinicas') }}" 
+               class="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                <i class="fas fa-times mr-2"></i> Cancelar
+            </a>
+            <button type="submit" 
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                <i class="fas fa-save mr-2"></i> Crear Historia Clínica
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+// Mostrar información de la mascota seleccionada
+document.getElementById('idmascota').addEventListener('change', function() {
+    const select = this;
+    const selectedOption = select.options[select.selectedIndex];
+    const infoDiv = document.getElementById('info-mascota');
+    
+    if (selectedOption.value) {
+        // Llenar los campos de información
+        document.getElementById('mascota-propietario').textContent = selectedOption.dataset.propietario || 'No especificado';
+        document.getElementById('mascota-raza').textContent = selectedOption.dataset.raza || 'No especificado';
+        document.getElementById('mascota-edad').textContent = selectedOption.dataset.edad || 'No especificado';
+        document.getElementById('mascota-sexo').textContent = selectedOption.dataset.sexo || 'No especificado';
+        
+        // Mostrar información
+        infoDiv.classList.remove('hidden');
+    } else {
+        // Ocultar información
+        infoDiv.classList.add('hidden');
+    }
+});
+
+// Validación del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    const mascota = document.getElementById('idmascota').value;
+    const motivo = document.getElementById('motivo_apertura').value.trim();
+    
+    if (!mascota) {
+        e.preventDefault();
+        alert('Por favor, seleccione una mascota.');
+        document.getElementById('idmascota').focus();
+        return false;
+    }
+    
+    if (!motivo) {
+        e.preventDefault();
+        alert('Por favor, ingrese el motivo de apertura de la historia clínica.');
+        document.getElementById('motivo_apertura').focus();
+        return false;
+    }
+    
+    // Cambiar texto del botón durante el envío
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando Historia...';
+    submitBtn.disabled = true;
+});
+
+// Auto-focus en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('idmascota').focus();
+});
+</script>
+{% endblock %}

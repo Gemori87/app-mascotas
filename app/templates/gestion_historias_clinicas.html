@@ -1,0 +1,220 @@
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Historias Clínicas{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado elegante -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full mb-4">
+            <i class="fas fa-clipboard-check text-2xl text-white"></i>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Historias Clínicas</h1>
+        <p class="text-lg text-gray-600">Gestión completa de historiales médicos veterinarios</p>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-clipboard-list text-green-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Historias</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_historias or 0 }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-stethoscope text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Consultas Hoy</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ consultas_hoy or 0 }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-clock text-yellow-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Pendientes</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ historias|selectattr('total_consultas', 'equalto', 0)|list|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-paw text-purple-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Mascotas Activas</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ historias|selectattr('estado')|list|length }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de historias clínicas -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-list text-green-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">Historias Clínicas Registradas</h2>
+            </div>
+            
+            <!-- Botón Nueva Historia y Filtros de búsqueda -->
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('crear_historia_clinica') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                    <i class="fas fa-plus mr-2"></i> Nueva Historia
+                </a>
+                <div class="relative">
+                    <input type="text" id="buscarMascota" placeholder="Buscar mascota..." 
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+        </div>
+
+        {% if historias %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mascota</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propietario</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Apertura</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consultas</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Consulta</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veterinario</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for historia in historias %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-paw text-green-600"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ historia.nombre_mascota }}</div>
+                                    <div class="text-sm text-gray-500">{{ historia.codigo_mascota }} - {{ historia.raza }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ historia.nombre_propietario }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ historia.fecha_apertura.strftime('%d/%m/%Y') if historia.fecha_apertura else 'No disponible' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ historia.total_consultas }} consultas
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if historia.ultima_consulta %}
+                                <div class="text-sm text-gray-900">{{ historia.ultima_consulta.strftime('%d/%m/%Y') }}</div>
+                            {% else %}
+                                <span class="text-sm text-gray-500 italic">Sin consultas</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ historia.veterinario_responsable or 'No asignado' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ url_for('ver_historia_clinica', id=historia.Idhistoria) }}" 
+                                   class="inline-flex items-center px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-md transition-colors duration-200">
+                                    <i class="fas fa-eye mr-1"></i> Ver
+                                </a>
+                                <a href="{{ url_for('historia_clinica_pdf', id=historia.Idhistoria) }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-md transition-colors duration-200">
+                                    <i class="fas fa-file-pdf mr-1"></i> PDF
+                                </a>
+                                <a href="{{ url_for('crear_consulta', historia_id=historia.Idhistoria) }}" 
+                                   class="inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-colors duration-200">
+                                    <i class="fas fa-plus mr-1"></i> Consulta
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación y estadísticas -->
+        <div class="mt-6 flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+            <div>
+                Mostrando {{ historias|length }} historias clínicas
+            </div>
+            <div class="flex items-center space-x-4">
+                <span>Activas: <strong class="text-green-600">{{ historias|selectattr('estado')|list|length }}</strong></span>
+                <span>Con consultas: <strong class="text-blue-600">{{ historias|selectattr('total_consultas', 'greaterthan', 0)|list|length }}</strong></span>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="text-center py-12">
+            <div class="mx-auto h-24 w-24 text-gray-400">
+                <i class="fas fa-clipboard-check text-6xl"></i>
+            </div>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">No hay historias clínicas registradas</h3>
+            <p class="mt-2 text-sm text-gray-500">
+                Las historias clínicas se crean automáticamente al registrar mascotas.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+<script>
+// Filtro de búsqueda en tiempo real
+document.getElementById('buscarMascota').addEventListener('input', function() {
+    const searchValue = this.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const mascotaText = row.querySelector('td:first-child').textContent.toLowerCase();
+        const propietarioText = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        
+        if (mascotaText.includes(searchValue) || propietarioText.includes(searchValue)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Auto-focus en búsqueda
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('buscarMascota').focus();
+});
+</script>
+{% endblock %}

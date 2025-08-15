@@ -1,0 +1,466 @@
+{% extends "layout.html" %}
+
+{% block title %}Consulta - {{ consulta.fecha_consulta.strftime('%d/%m/%Y') }}{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center">
+            <a href="{{ url_for('ver_historia_clinica', id=consulta.idhistoria) }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200 mr-4">
+                <i class="fas fa-arrow-left mr-2"></i> Volver a Historia
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Consulta Veterinaria</h1>
+                <p class="text-lg text-gray-600">{{ consulta.fecha_consulta.strftime('%d de %B de %Y') }}{% if consulta.hora_consulta %} - {{ consulta.hora_consulta }}{% endif %}</p>
+            </div>
+        </div>
+        
+        <div class="flex space-x-3">
+            <button onclick="window.print()" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200">
+                <i class="fas fa-print mr-2"></i> Imprimir
+            </button>
+            {% if can_edit %}
+            <a href="{{ url_for('editar_consulta', id=consulta.id) }}" 
+               class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors duration-200">
+                <i class="fas fa-edit mr-2"></i> Editar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Información del Paciente (Sidebar) -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-paw text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">{{ consulta.nombre_mascota }}</h3>
+                    <p class="text-sm text-gray-600">{{ consulta.codigo_mascota }}</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Propietario</h4>
+                        <p class="text-sm font-medium text-gray-900">{{ consulta.nombre_propietario }}</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Raza</h4>
+                        <p class="text-sm font-medium text-gray-900">{{ consulta.raza if consulta.raza else 'No especificada' }}</p>
+                    </div>
+                    
+                    {% if consulta.fecha_nac %}
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Edad</h4>
+                        <p class="text-sm font-medium text-gray-900">{{ (consulta.fecha_consulta - consulta.fecha_nac).days // 365 }} años</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.sexo %}
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Sexo</h4>
+                        <p class="text-sm font-medium text-gray-900">{{ consulta.sexo }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Principal de la Consulta -->
+        <div class="lg:col-span-3 space-y-8">
+            
+            <!-- Información Básica -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-calendar text-blue-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Información de la Consulta</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Fecha y Hora</h4>
+                        <p class="text-lg font-medium text-gray-900">
+                            {{ consulta.fecha_consulta.strftime('%d/%m/%Y') }}
+                            {% if consulta.hora_consulta %} - {{ consulta.hora_consulta }}{% endif %}
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Veterinario</h4>
+                        <p class="text-lg font-medium text-gray-900">{{ consulta.nombre_veterinario }}</p>
+                    </div>
+                </div>
+                
+                {% if consulta.motivo_consulta %}
+                <div class="mt-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Motivo de Consulta</h4>
+                    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                        <p class="text-gray-800">{{ consulta.motivo_consulta }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if consulta.anamnesis %}
+                <div class="mt-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Anamnesis</h4>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.anamnesis }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Signos Vitales -->
+            {% if consulta.temperatura or consulta.frecuencia_cardiaca or consulta.frecuencia_respiratoria or consulta.peso %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-heartbeat text-red-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Signos Vitales</h2>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {% if consulta.temperatura %}
+                    <div class="text-center">
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <i class="fas fa-thermometer-half text-red-500 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold text-gray-800">{{ consulta.temperatura }}°C</p>
+                            <p class="text-sm text-gray-600">Temperatura</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.frecuencia_cardiaca %}
+                    <div class="text-center">
+                        <div class="bg-pink-50 p-4 rounded-lg">
+                            <i class="fas fa-heartbeat text-pink-500 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold text-gray-800">{{ consulta.frecuencia_cardiaca }}</p>
+                            <p class="text-sm text-gray-600">FC (lpm)</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.frecuencia_respiratoria %}
+                    <div class="text-center">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <i class="fas fa-lungs text-blue-500 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold text-gray-800">{{ consulta.frecuencia_respiratoria }}</p>
+                            <p class="text-sm text-gray-600">FR (rpm)</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.peso %}
+                    <div class="text-center">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <i class="fas fa-weight text-green-500 text-2xl mb-2"></i>
+                            <p class="text-2xl font-bold text-gray-800">{{ consulta.peso }} kg</p>
+                            <p class="text-sm text-gray-600">Peso</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Examen Físico -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-search-plus text-green-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Examen Físico</h2>
+                </div>
+                
+                {% if consulta.examen_general %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Examen General</h4>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.examen_general }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% if consulta.sistema_cardiovascular %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-heart text-red-500 mr-1"></i> Sistema Cardiovascular
+                        </h4>
+                        <div class="bg-red-50 p-3 rounded-lg border-l-4 border-red-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.sistema_cardiovascular }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.sistema_respiratorio %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-lungs text-blue-500 mr-1"></i> Sistema Respiratorio
+                        </h4>
+                        <div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.sistema_respiratorio }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.sistema_digestivo %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-stomach text-yellow-500 mr-1"></i> Sistema Digestivo
+                        </h4>
+                        <div class="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.sistema_digestivo }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.sistema_neurologico %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-brain text-purple-500 mr-1"></i> Sistema Neurológico
+                        </h4>
+                        <div class="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.sistema_neurologico }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.sistema_musculoesqueletico %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-bone text-gray-500 mr-1"></i> Sistema Musculoesquelético
+                        </h4>
+                        <div class="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.sistema_musculoesqueletico }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if consulta.piel_anexos %}
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            <i class="fas fa-hand-paper text-orange-500 mr-1"></i> Piel y Anexos
+                        </h4>
+                        <div class="bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400">
+                            <p class="text-gray-800 text-sm whitespace-pre-wrap">{{ consulta.piel_anexos }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if consulta.ojos_oidos_boca %}
+                <div class="mt-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        <i class="fas fa-eye text-indigo-500 mr-1"></i> Ojos, Oídos y Boca
+                    </h4>
+                    <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-400">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.ojos_oidos_boca }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Diagnósticos y Tratamiento -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-diagnoses text-purple-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Diagnósticos y Tratamiento</h2>
+                </div>
+                
+                {% if consulta.diagnostico_diferencial %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Diagnóstico Diferencial</h4>
+                    <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.diagnostico_diferencial }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if consulta.diagnostico_definitivo %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        <i class="fas fa-check-circle text-green-500 mr-1"></i> Diagnóstico Definitivo
+                    </h4>
+                    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                        <p class="text-gray-800 font-medium whitespace-pre-wrap">{{ consulta.diagnostico_definitivo }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if consulta.plan_terapeutico %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        <i class="fas fa-pills text-blue-500 mr-1"></i> Plan Terapéutico
+                    </h4>
+                    <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.plan_terapeutico }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if consulta.observaciones %}
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Observaciones Adicionales</h4>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-800 whitespace-pre-wrap">{{ consulta.observaciones }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if consulta.proxima_cita %}
+                <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-plus text-indigo-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-indigo-800">Próxima Cita Recomendada:</span>
+                        <span class="ml-2 text-sm font-medium text-indigo-900">{{ consulta.proxima_cita.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Medicamentos Prescritos -->
+            {% if medicamentos_prescritos %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-pills text-green-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">Medicamentos Prescritos</h2>
+                    </div>
+                    <a href="{{ url_for('prescribir_medicamento', consulta_id=consulta.id) }}" 
+                       class="inline-flex items-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        <i class="fas fa-plus mr-2"></i> Prescribir
+                    </a>
+                </div>
+                
+                <div class="space-y-4">
+                    {% for medicamento in medicamentos_prescritos %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">{{ medicamento.nombre_medicamento }}</h4>
+                                <p class="text-sm text-gray-600 mt-1">{{ medicamento.dosis }} - {{ medicamento.frecuencia }}</p>
+                                {% if medicamento.duracion %}
+                                <p class="text-sm text-gray-600">Duración: {{ medicamento.duracion }}</p>
+                                {% endif %}
+                                {% if medicamento.instrucciones %}
+                                <p class="text-sm text-gray-700 mt-2">{{ medicamento.instrucciones }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ medicamento.estado }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Procedimientos Realizados -->
+            {% if procedimientos_realizados %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-procedures text-orange-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Procedimientos Realizados</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    {% for procedimiento in procedimientos_realizados %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800">{{ procedimiento.nombre_procedimiento }}</h4>
+                        <p class="text-sm text-gray-600 mt-1">{{ procedimiento.fecha.strftime('%d/%m/%Y') }}</p>
+                        {% if procedimiento.observaciones %}
+                        <p class="text-sm text-gray-700 mt-2">{{ procedimiento.observaciones }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historial de Estudios -->
+            {% if estudios_complementarios %}
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-x-ray text-cyan-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Estudios Complementarios</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    {% for estudio in estudios_complementarios %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">{{ estudio.tipo_estudio }}</h4>
+                                <p class="text-sm text-gray-600 mt-1">Solicitado: {{ estudio.fecha_solicitud.strftime('%d/%m/%Y') }}</p>
+                                {% if estudio.fecha_realizacion %}
+                                <p class="text-sm text-gray-600">Realizado: {{ estudio.fecha_realizacion.strftime('%d/%m/%Y') }}</p>
+                                {% endif %}
+                                {% if estudio.resultados %}
+                                <p class="text-sm text-gray-700 mt-2">{{ estudio.resultados }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if estudio.estado == 'Realizado' %}bg-green-100 text-green-800
+                                {% elif estudio.estado == 'Pendiente' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ estudio.estado }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+@media print {
+    .no-print, button, .no-print * {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .bg-gradient-to-br {
+        background: white !important;
+    }
+    
+    .shadow-lg {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb;
+    }
+}
+</style>
+{% endblock %}

@@ -1,19 +1,11 @@
-from flask import render_template, request, redirect, url_for, flash, session, current_app, make_response
-from datetime import datetime, timedelta, date
+from flask import render_template, request, redirect, url_for, flash, session, current_app
+from datetime import datetime, timedelta
 import mysql.connector
 import secrets
 from .db import get_db
 from flask_mail import Message
 from app import mail
 import re
-import io
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
-from reportlab.pdfgen import canvas
 
 app = current_app
 
@@ -2465,7 +2457,7 @@ def validar_cedula(ced):
 
 # ==================== MÓDULO DE HISTORIAS CLÍNICAS ====================
 
-@app.route('/gestion_historias_clinicas')
+@app.route('/historias-clinicas')
 def gestion_historias_clinicas():
     """Gestión principal de historias clínicas"""
     if 'user_id' not in session:
@@ -2479,27 +2471,6 @@ def gestion_historias_clinicas():
     cursor = conn.cursor(dictionary=True)
     
     try:
-        # Obtener estadísticas básicas
-        cursor.execute("SELECT COUNT(*) as total FROM historia_clinica WHERE estado = TRUE")
-        total_historias = cursor.fetchone()['total'] or 0
-        
-        cursor.execute("""
-            SELECT COUNT(*) as total 
-            FROM consulta 
-            WHERE estado = TRUE 
-            AND DATE(fecha_consulta) = CURDATE()
-        """)
-        consultas_hoy = cursor.fetchone()['total'] or 0
-        
-        cursor.execute("""
-            SELECT COUNT(*) as total 
-            FROM consulta 
-            WHERE estado = TRUE 
-            AND MONTH(fecha_consulta) = MONTH(CURDATE()) 
-            AND YEAR(fecha_consulta) = YEAR(CURDATE())
-        """)
-        consultas_mes = cursor.fetchone()['total'] or 0
-        
         # Obtener todas las historias clínicas con información de mascotas
         query = """
             SELECT 
@@ -2528,507 +2499,11 @@ def gestion_historias_clinicas():
     except mysql.connector.Error as err:
         flash(f'Error al consultar historias clínicas: {err}', 'error')
         historias = []
-        total_historias = 0
-        consultas_hoy = 0
-        consultas_mes = 0
     finally:
         cursor.close()
         conn.close()
     
-    return render_template('gestion_historias_clinicas.html', 
-                         historias=historias,
-                         total_historias=total_historias,
-                         consultas_hoy=consultas_hoy,
-                         consultas_mes=consultas_mes)
-
-
-@app.route('/crear_historia_clinica', methods=['GET', 'POST'])
-def crear_historia_clinica():
-    """Crear nueva historia clínica para una mascota"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    conn = get_db()
-    if not conn:
-        flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('gestion_historias_clinicas'))
-    
-    cursor = conn.cursor(dictionary=True)
-    
-    if request.method == 'POST':
-        try:
-            # Obtener datos del formulario
-            idmascota = request.form['idmascota']
-            fecha_apertura = request.form['fecha_apertura']
-            motivo_apertura = request.form['motivo_apertura']
-            veterinario_responsable = request.form.get('veterinario_responsable') or session['user_id']
-            estado_general = request.form.get('estado_general', '')
-            prioridad = request.form.get('prioridad', 'Rutina')
-            observaciones_iniciales = request.form.get('observaciones_iniciales', '')
-            
-            # Validaciones
-            if not idmascota or not fecha_apertura or not motivo_apertura:
-                flash('Mascota, fecha de apertura y motivo son obligatorios.', 'error')
-                return redirect(url_for('crear_historia_clinica'))
-            
-            # Verificar si ya existe una historia clínica activa para esta mascota
-            cursor.execute("""
-                SELECT Idhistoria 
-                FROM historia_clinica 
-                WHERE idmascota = %s AND estado = TRUE
-            """, (idmascota,))
-            
-            historia_existente = cursor.fetchone()
-            if historia_existente:
-                flash('Ya existe una historia clínica activa para esta mascota.', 'error')
-                return redirect(url_for('crear_historia_clinica'))
-            
-            # Insertar nueva historia clínica
-            query = """
-                INSERT INTO historia_clinica (
-                    idmascota, fecha_apertura, veterinario_responsable, 
-                    motivo_apertura, estado_general, prioridad, 
-                    observaciones_iniciales, estado
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            
-            cursor.execute(query, (
-                idmascota, fecha_apertura, veterinario_responsable,
-                motivo_apertura, estado_general, prioridad,
-                observaciones_iniciales, True
-            ))
-            
-            historia_id = cursor.lastrowid
-            conn.commit()
-            
-            flash('Historia clínica creada exitosamente.', 'success')
-            return redirect(url_for('ver_historia_clinica', id=historia_id))
-            
-        except mysql.connector.Error as err:
-            conn.rollback()
-            flash(f'Error al crear historia clínica: {err}', 'error')
-        finally:
-            cursor.close()
-            conn.close()
-    
-    # GET: Cargar datos para formulario
-    try:
-        # Obtener mascotas que NO tienen historia clínica activa
-        cursor.execute("""
-            SELECT 
-                m.Idmascota,
-                m.nombre,
-                m.codigo,
-                m.sexo,
-                r.nombre as raza,
-                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
-                CASE 
-                    WHEN m.fecha_nac IS NOT NULL THEN 
-                        CONCAT(TIMESTAMPDIFF(YEAR, m.fecha_nac, CURDATE()), ' años')
-                    ELSE 'No especificada'
-                END as edad
-            FROM mascota m
-            JOIN persona p ON m.idduenio = p.Idpersona
-            LEFT JOIN raza r ON m.idraza = r.Idraza
-            WHERE m.estado = TRUE 
-            AND m.Idmascota NOT IN (
-                SELECT idmascota FROM historia_clinica WHERE estado = TRUE
-            )
-            ORDER BY m.nombre
-        """)
-        mascotas = cursor.fetchall()
-        
-        # Obtener veterinarios disponibles
-        cursor.execute("""
-            SELECT 
-                u.Idusuario,
-                CONCAT(p.nom1, ' ', p.apell1) as nombre_completo
-            FROM Usuario u
-            JOIN persona p ON u.idpersona = p.Idpersona
-            JOIN Perfil pr ON u.idperfil = pr.Idperfil
-            WHERE u.estado = TRUE 
-            AND (pr.descripc = 'Veterinario' OR pr.descripc = 'Administrador')
-            ORDER BY p.nom1, p.apell1
-        """)
-        veterinarios = cursor.fetchall()
-        
-        fecha_actual = date.today().strftime('%Y-%m-%d')
-        
-        return render_template('crear_historia_clinica.html', 
-                             mascotas=mascotas, 
-                             veterinarios=veterinarios,
-                             fecha_actual=fecha_actual)
-        
-    except mysql.connector.Error as err:
-        flash(f'Error al cargar datos: {err}', 'error')
-        return redirect(url_for('gestion_historias_clinicas'))
-    finally:
-        cursor.close()
-        conn.close()
-
-
-@app.route('/historia-clinica/<int:id>/enviar-pdf')
-def enviar_historia_clinica_pdf(id):
-    """Enviar por correo electrónico el PDF de la historia clínica"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    # Verificar que existe la historia clínica y obtener correo del dueño
-    conn = get_db()
-    if not conn:
-        flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('ver_historia_clinica', id=id))
-    
-    try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT h.Idhistoria, m.nombre as nombre_mascota, p.correo as correo_propietario, 
-                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
-                m.Idmascota as idmascota,
-                m.codigo as codigo_mascota,
-                m.sexo,
-                m.fecha_nac,
-                TIMESTAMPDIFF(YEAR, m.fecha_nac, CURDATE()) as edad_años,
-                TIMESTAMPDIFF(MONTH, m.fecha_nac, CURDATE()) % 12 as edad_meses,
-                r.nombre as raza,
-                p.tele as telefono_propietario,
-                p.direccion as direccion_propietario,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_responsable,
-                h.fecha_apertura,
-                h.motivo_apertura
-            FROM historia_clinica h
-            JOIN mascota m ON h.idmascota = m.Idmascota
-            JOIN raza r ON m.idraza = r.Idraza
-            JOIN persona p ON m.idduenio = p.Idpersona
-            LEFT JOIN Usuario u ON h.veterinario_responsable = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE h.Idhistoria = %s
-        """, (id,))
-        
-        historia = cursor.fetchone()
-        
-        if not historia:
-            flash('Historia clínica no encontrada.', 'error')
-            return redirect(url_for('gestion_historias_clinicas'))
-        
-        if not historia['correo_propietario']:
-            flash('El propietario no tiene correo electrónico registrado.', 'error')
-            return redirect(url_for('ver_historia_clinica', id=id))
-        
-        # Consultas asociadas
-        cursor.execute("""
-            SELECT 
-                c.*,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_consulta
-            FROM consulta c
-            LEFT JOIN Usuario u ON c.veterinario_consulta = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE c.idhistoria = %s AND c.estado = TRUE
-            ORDER BY c.fecha_consulta DESC, c.Idconsulta DESC
-        """, (id,))
-        consultas = cursor.fetchall()
-        
-        # Para cada consulta, obtener datos adicionales detallados
-        for consulta in consultas:
-            # Procedimientos de esta mascota
-            cursor.execute("""
-                SELECT 
-                    pm.*,
-                    tp.nombre as nombre_procedimiento,
-                    CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_nombre
-                FROM procedimientomascota pm
-                JOIN tipoprocedimiento tp ON pm.idprocedimiento = tp.Idprocedimiento
-                LEFT JOIN persona vet ON pm.idveterinario = vet.Idpersona
-                WHERE pm.idmascota = %s AND pm.estado = TRUE
-                AND pm.fecha BETWEEN DATE_SUB(%s, INTERVAL 30 DAY) AND DATE_ADD(%s, INTERVAL 1 DAY)
-                ORDER BY pm.fecha DESC
-            """, (historia['idmascota'], consulta['fecha_consulta'], consulta['fecha_consulta']))
-            consulta['procedimientos'] = cursor.fetchall()
-            
-            # Medicamentos prescritos en esta consulta específica
-            cursor.execute("""
-                SELECT 
-                    mp.*,
-                    med.nombre as nombre_medicamento
-                FROM medicamento_prescrito mp
-                JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
-                WHERE mp.idconsulta = %s
-                ORDER BY mp.fecha_inicio DESC
-            """, (consulta['Idconsulta'],))
-            consulta['medicamentos_consulta'] = cursor.fetchall()
-            
-            # Enfermedades diagnosticadas en esta consulta
-            cursor.execute("""
-                SELECT 
-                    ed.*,
-                    te.nombre as nombre_enfermedad
-                FROM enfermedad_diagnosticada ed
-                JOIN tipoenfermedad te ON ed.idenfermedad = te.Idenfermedad
-                WHERE ed.idconsulta = %s
-                ORDER BY ed.fecha_diagnostico DESC
-            """, (consulta['Idconsulta'],))
-            consulta['enfermedades_consulta'] = cursor.fetchall()
-        
-        # Medicamentos prescritos (historial general)
-        cursor.execute("""
-            SELECT 
-                mp.*,
-                med.nombre as nombre_medicamento,
-                c.fecha_consulta
-            FROM medicamento_prescrito mp
-            JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
-            JOIN consulta c ON mp.idconsulta = c.Idconsulta
-            WHERE c.idhistoria = %s
-            ORDER BY c.fecha_consulta DESC, mp.fecha_inicio DESC
-        """, (id,))
-        medicamentos = cursor.fetchall()
-        
-        # Vacunaciones
-        cursor.execute("""
-            SELECT 
-                vh.*,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_aplicador
-            FROM vacunacion_historia vh
-            LEFT JOIN Usuario u ON vh.veterinario_aplicador = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE vh.idhistoria = %s AND vh.estado = TRUE
-            ORDER BY vh.fecha_aplicacion DESC
-        """, (id,))
-        vacunas = cursor.fetchall()
-        
-        # Enfermedades diagnosticadas
-        cursor.execute("""
-            SELECT 
-                ed.*,
-                te.nombre as nombre_enfermedad,
-                c.fecha_consulta
-            FROM enfermedad_diagnosticada ed
-            JOIN tipoenfermedad te ON ed.idenfermedad = te.Idenfermedad
-            JOIN consulta c ON ed.idconsulta = c.Idconsulta
-            WHERE c.idhistoria = %s
-            ORDER BY c.fecha_consulta DESC, ed.fecha_diagnostico DESC
-        """, (id,))
-        enfermedades = cursor.fetchall()
-        
-        # Ahora generamos el PDF y enviamos el correo
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib import colors
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-        from datetime import datetime
-        import io
-        
-        # Generar PDF con diseño profesional
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                              rightMargin=50, leftMargin=50,
-                              topMargin=50, bottomMargin=50)
-        
-        # Estilos mejorados con diseño profesional
-        styles = getSampleStyleSheet()
-        
-        # Estilo para el header principal
-        header_style = ParagraphStyle(
-            'HeaderStyle',
-            parent=styles['Normal'],
-            fontSize=20,
-            textColor=colors.HexColor('#1e3a8a'),
-            fontName='Helvetica-Bold',
-            alignment=1,  # Centrado
-            spaceAfter=10
-        )
-        
-        # Estilo para subtítulos principales
-        section_title_style = ParagraphStyle(
-            'SectionTitle',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#1f2937'),
-            fontName='Helvetica-Bold',
-            borderWidth=0,
-            borderColor=colors.HexColor('#3b82f6'),
-            borderPadding=5,
-            backColor=colors.HexColor('#f0f9ff'),
-            leftIndent=10,
-            spaceAfter=15,
-            spaceBefore=20
-        )
-        
-        # Estilo para subsecciones
-        subsection_style = ParagraphStyle(
-            'SubsectionStyle',
-            parent=styles['Normal'],
-            fontSize=12,
-            textColor=colors.HexColor('#374151'),
-            fontName='Helvetica-Bold',
-            spaceAfter=8,
-            spaceBefore=10
-        )
-        
-        # Estilo para texto normal
-        normal_text_style = ParagraphStyle(
-            'NormalText',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#4b5563'),
-            spaceAfter=6,
-            alignment=4  # Justificado
-        )
-        
-        # Estilo para información destacada
-        highlight_style = ParagraphStyle(
-            'HighlightStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor("#131414"),
-            fontName='Helvetica-Bold',
-            backColor=colors.HexColor('#ecfdf5'),
-            borderWidth=1,
-            borderColor=colors.HexColor('#10b981'),
-            borderPadding=8,
-            spaceAfter=10
-        )
-        
-        story = []
-        
-        # Header profesional con logo simulado
-        story.append(Spacer(1, 20))
-        
-        # Título principal con diseño profesional
-        story.append(Paragraph("CLÍNICA VETERINARIA MEDIPET", header_style))
-        story.append(Paragraph("HISTORIA CLÍNICA VETERINARIA", header_style))
-        
-        # Línea decorativa
-        story.append(Spacer(1, 10))
-        story.append(Paragraph("═" * 80, ParagraphStyle('DecorativeLine', 
-                      parent=styles['Normal'], fontSize=12, 
-                      textColor=colors.HexColor('#3b82f6'), alignment=1)))
-        story.append(Spacer(1, 20))
-        
-        # Información del documento en formato profesional
-        fecha_actual = datetime.now().strftime('%d de %B de %Y')
-        doc_info = f"<b>Documento generado:</b> {fecha_actual} | <b>Historia Clínica N°:</b> {historia['Idhistoria']}"
-        story.append(Paragraph(doc_info, normal_text_style))
-        story.append(Spacer(1, 20))
-        
-        # SECCIÓN 1: INFORMACIÓN DEL PACIENTE
-        story.append(Paragraph("1. INFORMACIÓN DEL PACIENTE", section_title_style))
-        
-        # Información de la mascota en formato de párrafos
-        story.append(Paragraph("<b>Nombre de la Mascota:</b> " + (historia['nombre_mascota'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Código de Identificación:</b> " + (historia['codigo_mascota'] or 'N/A'), normal_text_style))        
-        story.append(Paragraph("<b>Raza:</b> " + (historia['raza'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Sexo:</b> " + (historia['sexo'] or 'N/A'), normal_text_style))
-        
-        edad_texto = f"{historia['edad_años']} años, {historia['edad_meses']} meses" if historia['edad_años'] else 'N/A'
-        story.append(Paragraph("<b>Edad:</b> " + edad_texto, normal_text_style))
-        
-        fecha_nac_texto = historia['fecha_nac'].strftime('%d/%m/%Y') if historia.get('fecha_nac') else 'N/A'
-        story.append(Paragraph("<b>Fecha de Nacimiento:</b> " + fecha_nac_texto, normal_text_style))
-        
-        story.append(Spacer(1, 15))
-        
-        # SECCIÓN 2: INFORMACIÓN DEL PROPIETARIO
-        story.append(Paragraph("2. INFORMACIÓN DEL PROPIETARIO", section_title_style))
-        
-        story.append(Paragraph("<b>Nombre Completo:</b> " + (historia['nombre_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Teléfono de Contacto:</b> " + (historia['telefono_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Correo Electrónico:</b> " + (historia['correo_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Dirección:</b> " + (historia['direccion_propietario'] or 'N/A'), normal_text_style))
-        
-        story.append(Spacer(1, 15))
-        
-        # SECCIÓN 3: INFORMACIÓN CLÍNICA INICIAL
-        story.append(Paragraph("3. INFORMACIÓN CLÍNICA INICIAL", section_title_style))
-        
-        fecha_apertura_texto = historia['fecha_apertura'].strftime('%d/%m/%Y') if historia['fecha_apertura'] else 'N/A'
-        story.append(Paragraph("<b>Fecha de Apertura:</b> " + fecha_apertura_texto, normal_text_style))
-        story.append(Paragraph("<b>Veterinario Responsable:</b> " + (historia['veterinario_responsable'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Motivo de Apertura:</b> " + (historia['motivo_apertura'] or 'N/A'), normal_text_style))
-        
-        story.append(Spacer(1, 20))
-        
-        # Consultas y otros datos (versión simplificada para el ejemplo)
-        if consultas:
-            story.append(Paragraph("4. HISTORIAL DE CONSULTAS", section_title_style))
-            for i, consulta in enumerate(consultas, 1):
-                # Nueva página para cada consulta si no es la primera
-                if i > 1:
-                    story.append(PageBreak())
-                
-                fecha_str = consulta['fecha_consulta'].strftime('%d/%m/%Y')
-                consulta_header = f"CONSULTA VETERINARIA #{i}"
-                story.append(Paragraph(consulta_header, subsection_style))
-                story.append(Paragraph(f"Fecha: {fecha_str}", normal_text_style))
-                
-                story.append(Paragraph(f"<b>Motivo:</b> {consulta['motivo_consulta'] or 'No especificado'}", normal_text_style))
-                if consulta.get('diagnostico_definitivo'):
-                    story.append(Paragraph(f"<b>Diagnóstico:</b> {consulta['diagnostico_definitivo']}", normal_text_style))
-                
-                # Si hay medicamentos específicos para esta consulta, mostrarlos
-                if 'medicamentos_consulta' in consulta and consulta['medicamentos_consulta']:
-                    story.append(Paragraph("<b>Medicamentos:</b>", normal_text_style))
-                    for med in consulta['medicamentos_consulta']:
-                        story.append(Paragraph(f"- {med.get('nombre_medicamento', 'No especificado')}", normal_text_style))
-                
-                story.append(Spacer(1, 10))
-        
-        # Construir PDF
-        doc.build(story)
-        
-        # Crear nombre de archivo seguro (sin espacios ni caracteres especiales)
-        import re
-        nombre_mascota_seguro = re.sub(r'[^a-zA-Z0-9_-]', '_', historia["nombre_mascota"] or "mascota")
-        nombre_archivo = f'historia_clinica_{nombre_mascota_seguro}_{historia["Idhistoria"]}.pdf'
-        
-        # Enviar correo con PDF adjunto
-        from flask_mail import Message
-        from app import mail
-        
-        try:
-            # Crear mensaje de correo con PDF adjunto
-            msg = Message(
-                f'Historia Clínica de {historia["nombre_mascota"]}',
-                recipients=[historia['correo_propietario']]
-            )
-            msg.body = f"""
-            Estimado/a {historia['nombre_propietario']}:
-            
-            Adjunto encontrará la historia clínica completa de {historia['nombre_mascota']}.
-            
-            Saludos cordiales,
-            Equipo de MediPet
-            """
-            
-            # Adjuntar el PDF
-            buffer.seek(0)
-            msg.attach(
-                filename=nombre_archivo,
-                content_type='application/pdf',
-                data=buffer.getvalue()
-            )
-            
-            # Enviar correo
-            mail.send(msg)
-            
-            flash(f'Historia clínica enviada exitosamente al correo {historia["correo_propietario"]}.', 'success')
-        except Exception as e:
-            # Registrar el error en caso de que falle el envío
-            print(f"Error al enviar correo: {e}")
-            flash('Error al enviar el correo electrónico. Por favor, inténtelo nuevamente.', 'error')
-        
-        return redirect(url_for('ver_historia_clinica', id=id))
-            
-    except mysql.connector.Error as err:
-        flash(f'Error de base de datos: {err}', 'error')
-        return redirect(url_for('ver_historia_clinica', id=id))
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if conn:
-            conn.close()
+    return render_template('gestion_historias_clinicas.html', historias=historias)
 
 
 @app.route('/historia-clinica/<int:id>')
@@ -3108,535 +2583,6 @@ def ver_historia_clinica(id):
     except mysql.connector.Error as err:
         flash(f'Error al cargar historia clínica: {err}', 'error')
         return redirect(url_for('gestion_historias_clinicas'))
-    finally:
-        cursor.close()
-        conn.close()
-
-
-@app.route('/historia-clinica/<int:id>/pdf')
-def historia_clinica_pdf(id):
-    """Generar PDF de la historia clínica completa"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    conn = get_db()
-    if not conn:
-        flash('Error de conexión con la base de datos.', 'error')
-        return redirect(url_for('gestion_historias_clinicas'))
-    
-    cursor = conn.cursor(dictionary=True)
-    
-    try:
-        # Información básica de la historia clínica
-        cursor.execute("""
-            SELECT 
-                hc.*,
-                m.Idmascota as idmascota,
-                m.nombre as nombre_mascota,
-                m.codigo as codigo_mascota,
-                m.sexo,
-                m.fecha_nac,
-                TIMESTAMPDIFF(YEAR, m.fecha_nac, CURDATE()) as edad_años,
-                TIMESTAMPDIFF(MONTH, m.fecha_nac, CURDATE()) % 12 as edad_meses,
-                r.nombre as raza,
-                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
-                p.correo as correo_propietario,
-                p.tele as telefono_propietario,
-                p.direccion as direccion_propietario,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_responsable
-            FROM historia_clinica hc
-            JOIN mascota m ON hc.idmascota = m.Idmascota
-            JOIN raza r ON m.idraza = r.Idraza
-            JOIN persona p ON m.idduenio = p.Idpersona
-            LEFT JOIN Usuario u ON hc.veterinario_responsable = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE hc.Idhistoria = %s
-        """, (id,))
-        historia = cursor.fetchone()
-        
-        if not historia:
-            flash('Historia clínica no encontrada.', 'error')
-            return redirect(url_for('gestion_historias_clinicas'))
-        
-        # Consultas asociadas
-        cursor.execute("""
-            SELECT 
-                c.*,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_consulta
-            FROM consulta c
-            LEFT JOIN Usuario u ON c.veterinario_consulta = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE c.idhistoria = %s AND c.estado = TRUE
-            ORDER BY c.fecha_consulta DESC, c.Idconsulta DESC
-        """, (id,))
-        consultas = cursor.fetchall()
-        
-        # Para cada consulta, obtener datos adicionales detallados
-        for consulta in consultas:
-            # Procedimientos de esta mascota (ya que no están directamente relacionados con consultas)
-            cursor.execute("""
-                SELECT 
-                    pm.*,
-                    tp.nombre as nombre_procedimiento,
-                    CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_nombre
-                FROM procedimientomascota pm
-                JOIN tipoprocedimiento tp ON pm.idprocedimiento = tp.Idprocedimiento
-                LEFT JOIN persona vet ON pm.idveterinario = vet.Idpersona
-                WHERE pm.idmascota = %s AND pm.estado = TRUE
-                AND pm.fecha BETWEEN DATE_SUB(%s, INTERVAL 30 DAY) AND DATE_ADD(%s, INTERVAL 1 DAY)
-                ORDER BY pm.fecha DESC
-            """, (historia['idmascota'], consulta['fecha_consulta'], consulta['fecha_consulta']))
-            consulta['procedimientos'] = cursor.fetchall()
-            
-            # Medicamentos prescritos en esta consulta específica
-            cursor.execute("""
-                SELECT 
-                    mp.*,
-                    med.nombre as nombre_medicamento
-                FROM medicamento_prescrito mp
-                JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
-                WHERE mp.idconsulta = %s
-                ORDER BY mp.fecha_inicio DESC
-            """, (consulta['Idconsulta'],))
-            consulta['medicamentos_consulta'] = cursor.fetchall()
-            
-            # Enfermedades diagnosticadas en esta consulta
-            cursor.execute("""
-                SELECT 
-                    ed.*,
-                    te.nombre as nombre_enfermedad
-                FROM enfermedad_diagnosticada ed
-                JOIN tipoenfermedad te ON ed.idenfermedad = te.Idenfermedad
-                WHERE ed.idconsulta = %s
-                ORDER BY ed.fecha_diagnostico DESC
-            """, (consulta['Idconsulta'],))
-            consulta['enfermedades_consulta'] = cursor.fetchall()
-        
-        # Medicamentos prescritos (historial general)
-        cursor.execute("""
-            SELECT 
-                mp.*,
-                med.nombre as nombre_medicamento,
-                c.fecha_consulta
-            FROM medicamento_prescrito mp
-            JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
-            JOIN consulta c ON mp.idconsulta = c.Idconsulta
-            WHERE c.idhistoria = %s
-            ORDER BY c.fecha_consulta DESC, mp.fecha_inicio DESC
-        """, (id,))
-        medicamentos = cursor.fetchall()
-        
-        # Vacunaciones
-        cursor.execute("""
-            SELECT 
-                vh.*,
-                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_aplicador
-            FROM vacunacion_historia vh
-            LEFT JOIN Usuario u ON vh.veterinario_aplicador = u.Idusuario
-            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
-            WHERE vh.idhistoria = %s AND vh.estado = TRUE
-            ORDER BY vh.fecha_aplicacion DESC
-        """, (id,))
-        vacunas = cursor.fetchall()
-        
-        # Enfermedades diagnosticadas
-        cursor.execute("""
-            SELECT 
-                ed.*,
-                te.nombre as nombre_enfermedad,
-                c.fecha_consulta
-            FROM enfermedad_diagnosticada ed
-            JOIN tipoenfermedad te ON ed.idenfermedad = te.Idenfermedad
-            JOIN consulta c ON ed.idconsulta = c.Idconsulta
-            WHERE c.idhistoria = %s
-            ORDER BY c.fecha_consulta DESC, ed.fecha_diagnostico DESC
-        """, (id,))
-        enfermedades = cursor.fetchall()
-        
-        # Generar PDF con diseño profesional
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, 
-                              rightMargin=50, leftMargin=50,
-                              topMargin=50, bottomMargin=50)
-        
-        # Estilos mejorados con diseño profesional
-        styles = getSampleStyleSheet()
-        
-        # Estilo para el header principal
-        header_style = ParagraphStyle(
-            'HeaderStyle',
-            parent=styles['Normal'],
-            fontSize=20,
-            textColor=colors.HexColor('#1e3a8a'),
-            fontName='Helvetica-Bold',
-            alignment=1,  # Centrado
-            spaceAfter=10
-        )
-        
-        # Estilo para subtítulos principales
-        section_title_style = ParagraphStyle(
-            'SectionTitle',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#1f2937'),
-            fontName='Helvetica-Bold',
-            borderWidth=0,
-            borderColor=colors.HexColor('#3b82f6'),
-            borderPadding=5,
-            backColor=colors.HexColor('#f0f9ff'),
-            leftIndent=10,
-            spaceAfter=15,
-            spaceBefore=20
-        )
-        
-        # Estilo para subsecciones
-        subsection_style = ParagraphStyle(
-            'SubsectionStyle',
-            parent=styles['Normal'],
-            fontSize=12,
-            textColor=colors.HexColor('#374151'),
-            fontName='Helvetica-Bold',
-            spaceAfter=8,
-            spaceBefore=10
-        )
-        
-        # Estilo para texto normal
-        normal_text_style = ParagraphStyle(
-            'NormalText',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#4b5563'),
-            spaceAfter=6,
-            alignment=4  # Justificado
-        )
-        
-        # Estilo para información destacada
-        highlight_style = ParagraphStyle(
-            'HighlightStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor("#131414"),
-            fontName='Helvetica-Bold',
-            backColor=colors.HexColor('#ecfdf5'),
-            borderWidth=1,
-            borderColor=colors.HexColor('#10b981'),
-            borderPadding=8,
-            spaceAfter=10
-        )
-        
-        story = []
-        
-        # Header profesional con logo simulado
-        story.append(Spacer(1, 20))
-        
-        # Título principal con diseño profesional
-        story.append(Paragraph("CLÍNICA VETERINARIA MEDIPET", header_style))
-        story.append(Paragraph("HISTORIA CLÍNICA VETERINARIA", header_style))
-        
-        # Línea decorativa
-        story.append(Spacer(1, 10))
-        story.append(Paragraph("═" * 80, ParagraphStyle('DecorativeLine', 
-                      parent=styles['Normal'], fontSize=12, 
-                      textColor=colors.HexColor('#3b82f6'), alignment=1)))
-        story.append(Spacer(1, 20))
-        
-        # Información del documento en formato profesional
-        fecha_actual = datetime.now().strftime('%d de %B de %Y')
-        doc_info = f"<b>Documento generado:</b> {fecha_actual} | <b>Historia Clínica N°:</b> {historia['Idhistoria']}"
-        story.append(Paragraph(doc_info, normal_text_style))
-        story.append(Spacer(1, 20))
-        
-        # SECCIÓN 1: INFORMACIÓN DEL PACIENTE
-        story.append(Paragraph("1. INFORMACIÓN DEL PACIENTE", section_title_style))
-        
-        # Información de la mascota en formato de párrafos
-        story.append(Paragraph("<b>Nombre de la Mascota:</b> " + (historia['nombre_mascota'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Código de Identificación:</b> " + (historia['codigo_mascota'] or 'N/A'), normal_text_style))        
-        story.append(Paragraph("<b>Raza:</b> " + (historia['raza'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Sexo:</b> " + (historia['sexo'] or 'N/A'), normal_text_style))
-        
-        edad_texto = f"{historia['edad_años']} años, {historia['edad_meses']} meses" if historia['edad_años'] else 'N/A'
-        story.append(Paragraph("<b>Edad:</b> " + edad_texto, normal_text_style))
-        
-        fecha_nac_texto = historia['fecha_nac'].strftime('%d/%m/%Y') if historia.get('fecha_nac') else 'N/A'
-        story.append(Paragraph("<b>Fecha de Nacimiento:</b> " + fecha_nac_texto, normal_text_style))
-
-        story.append(Spacer(1, 15))
-        
-        # SECCIÓN 2: INFORMACIÓN DEL PROPIETARIO
-        story.append(Paragraph("2. INFORMACIÓN DEL PROPIETARIO", section_title_style))
-        
-        story.append(Paragraph("<b>Nombre Completo:</b> " + (historia['nombre_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Teléfono de Contacto:</b> " + (historia['telefono_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Correo Electrónico:</b> " + (historia['correo_propietario'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Dirección:</b> " + (historia['direccion_propietario'] or 'N/A'), normal_text_style))
-        
-        story.append(Spacer(1, 15))
-        
-        # SECCIÓN 3: INFORMACIÓN CLÍNICA INICIAL
-        story.append(Paragraph("3. INFORMACIÓN CLÍNICA INICIAL", section_title_style))
-        
-        fecha_apertura_texto = historia['fecha_apertura'].strftime('%d/%m/%Y') if historia['fecha_apertura'] else 'N/A'
-        story.append(Paragraph("<b>Fecha de Apertura:</b> " + fecha_apertura_texto, normal_text_style))
-        story.append(Paragraph("<b>Veterinario Responsable:</b> " + (historia['veterinario_responsable'] or 'N/A'), normal_text_style))
-        story.append(Paragraph("<b>Motivo de Apertura:</b> " + (historia['motivo_apertura'] or 'N/A'), normal_text_style))
-        
-        story.append(Spacer(1, 20))
-        
-        # Observaciones generales si existen
-        if historia.get('observaciones_generales'):
-            story.append(Paragraph("OBSERVACIONES GENERALES", subsection_style))
-            obs_style = ParagraphStyle('ObservacionStyle', 
-                                     fontName='Helvetica', fontSize=9, 
-                                     alignment=TA_JUSTIFY, spaceAfter=10,
-                                     leftIndent=10, rightIndent=10)
-            story.append(Paragraph(historia['observaciones_generales'], obs_style))
-        
-        if historia.get('alergias_conocidas'):
-            story.append(Paragraph("⚠️ ALERGIAS CONOCIDAS", subsection_style))
-            alergia_style = ParagraphStyle('AlertStyle', 
-                                         fontName='Helvetica-Bold', fontSize=9,
-                                         alignment=TA_JUSTIFY, spaceAfter=10,
-                                         backColor=colors.HexColor('#f1f5f9'), # Gris muy claro
-                                         borderColor=colors.HexColor('#64748b'), # Gris neutro
-                                         borderWidth=1, leftIndent=10, rightIndent=10,
-                                         topPadding=6, bottomPadding=6)
-            story.append(Paragraph(historia['alergias_conocidas'], alergia_style))
-        
-        story.append(Spacer(1, 20))
-        
-        # SECCIÓN 4: HISTORIAL DE CONSULTAS DETALLADO
-        if consultas:
-            story.append(Paragraph("4. HISTORIAL DE CONSULTAS VETERINARIAS", section_title_style))
-            
-            for i, consulta in enumerate(consultas):
-                # Nueva página para cada consulta si no es la primera
-                if i > 0:
-                    story.append(PageBreak())
-                
-                # Header de la consulta con diseño profesional
-                fecha_str = consulta['fecha_consulta'].strftime('%d/%m/%Y')
-                hora_str = f" a las {consulta['hora_consulta']}" if consulta.get('hora_consulta') else ""
-                
-                consulta_header = f"CONSULTA VETERINARIA #{i+1}"
-                story.append(Paragraph(consulta_header, subsection_style))
-                story.append(Paragraph(f"Fecha: {fecha_str}{hora_str}", normal_text_style))
-                story.append(Spacer(1, 10))
-                
-                # 4.1 Información básica de la consulta en formato de párrafos
-                story.append(Paragraph("INFORMACIÓN DE LA CONSULTA", subsection_style))
-                
-                story.append(Paragraph(f"<b>Motivo de Consulta:</b> {consulta.get('motivo_consulta') or 'No especificado'}", normal_text_style))
-                story.append(Paragraph(f"<b>Veterinario Tratante:</b> {consulta.get('veterinario_consulta') or 'No especificado'}", normal_text_style))
-                story.append(Paragraph(f"<b>Estado de la Consulta:</b> {consulta.get('estado_consulta') or 'Completada'}", normal_text_style))
-                
-                if consulta.get('anamnesis'):
-                    story.append(Paragraph(f"<b>Anamnesis:</b> {consulta['anamnesis']}", normal_text_style))
-                
-                story.append(Spacer(1, 15))
-                
-                # 4.2 Signos vitales en formato de párrafos
-                if any([consulta.get('temperatura'), consulta.get('frecuencia_cardiaca'), 
-                       consulta.get('frecuencia_respiratoria'), consulta.get('peso')]):
-                    
-                    story.append(Paragraph("SIGNOS VITALES", subsection_style))
-                    
-                    if consulta.get('temperatura'):
-                        story.append(Paragraph(f"<b>Temperatura:</b> {consulta['temperatura']}°C", normal_text_style))
-                    
-                    if consulta.get('frecuencia_cardiaca'):
-                        story.append(Paragraph(f"<b>Frecuencia Cardíaca:</b> {consulta['frecuencia_cardiaca']} lpm", normal_text_style))
-                    
-                    if consulta.get('frecuencia_respiratoria'):
-                        story.append(Paragraph(f"<b>Frecuencia Respiratoria:</b> {consulta['frecuencia_respiratoria']} rpm", normal_text_style))
-
-                    if consulta.get('peso'):
-                        story.append(Paragraph(f"<b>Peso:</b> {consulta['peso']} kg", normal_text_style))
-
-                    story.append(Spacer(1, 15))
-                
-                # 4.3 Examen físico por sistemas
-                if any([consulta.get('examen_general'), consulta.get('sistema_cardiovascular'),
-                       consulta.get('sistema_respiratorio'), consulta.get('sistema_digestivo'),
-                       consulta.get('sistema_neurologico'), consulta.get('sistema_musculoesqueletico'),
-                       consulta.get('piel_anexos'), consulta.get('ojos_oidos_boca')]):
-                    
-                    story.append(Paragraph("EXAMEN FÍSICO POR SISTEMAS", subsection_style))
-                    
-                    sistemas = [
-                        ('Examen General', consulta.get('examen_general')),
-                        ('Sistema Cardiovascular', consulta.get('sistema_cardiovascular')),
-                        ('Sistema Respiratorio', consulta.get('sistema_respiratorio')),
-                        ('Sistema Digestivo', consulta.get('sistema_digestivo')),
-                        ('Sistema Neurológico', consulta.get('sistema_neurologico')),
-                        ('Sistema Musculoesquelético', consulta.get('sistema_musculoesqueletico')),
-                        ('Piel y Anexos', consulta.get('piel_anexos')),
-                        ('Ojos, Oídos y Boca', consulta.get('ojos_oidos_boca'))
-                    ]
-                    
-                    for sistema, hallazgo in sistemas:
-                        if hallazgo:
-                            story.append(Paragraph(f"<b>{sistema}:</b> {hallazgo}", normal_text_style))
-                    
-                    story.append(Spacer(1, 15))
-                
-                # 4.4 Diagnóstico y tratamiento
-                if any([consulta.get('diagnostico_diferencial'), consulta.get('diagnostico_definitivo'),
-                       consulta.get('plan_terapeutico'), consulta.get('observaciones')]):
-                    
-                    story.append(Paragraph("DIAGNÓSTICO Y PLAN TERAPÉUTICO", subsection_style))
-                    
-                    if consulta.get('diagnostico_diferencial'):
-                        story.append(Paragraph(f"<b>Diagnóstico Diferencial:</b> {consulta['diagnostico_diferencial']}", normal_text_style))
-                    
-                    if consulta.get('diagnostico_definitivo'):
-                        story.append(Paragraph(f"<b>Diagnóstico Definitivo:</b> {consulta['diagnostico_definitivo']}", normal_text_style))
-                    
-                    if consulta.get('plan_terapeutico'):
-                        story.append(Paragraph(f"<b>Plan Terapéutico:</b> {consulta['plan_terapeutico']}", normal_text_style))
-                    
-                    if consulta.get('observaciones'):
-                        story.append(Paragraph(f"<b>Observaciones:</b> {consulta['observaciones']}", normal_text_style))
-                    
-                    if consulta.get('proxima_cita'):
-                        proxima_cita_str = consulta['proxima_cita'].strftime('%d/%m/%Y') if consulta['proxima_cita'] else 'No programada'
-                        story.append(Paragraph(f"<b>Próxima Cita Programada:</b> {proxima_cita_str}", normal_text_style))
-                    
-                    story.append(Spacer(1, 20))
-                
-                # Si hay medicamentos específicos para esta consulta, mostrarlos
-                if 'medicamentos_consulta' in consulta and consulta['medicamentos_consulta']:
-                    story.append(Paragraph("MEDICAMENTOS PRESCRITOS EN ESTA CONSULTA", subsection_style))
-                    
-                    for j, med in enumerate(consulta['medicamentos_consulta'], 1):
-                        story.append(Paragraph(f"<b>Medicamento #{j}:</b> {med.get('nombre_medicamento', 'No especificado')}", normal_text_style))
-                        if med.get('dosis'):
-                            story.append(Paragraph(f"<b>Dosis:</b> {med['dosis']}", normal_text_style))
-                        if med.get('frecuencia'):
-                            story.append(Paragraph(f"<b>Frecuencia:</b> {med['frecuencia']}", normal_text_style))
-                        if med.get('duracion'):
-                            story.append(Paragraph(f"<b>Duración:</b> {med['duracion']}", normal_text_style))
-                        
-                        story.append(Spacer(1, 10))
-                    
-                    story.append(Spacer(1, 15))
-        
-        # SECCIÓN 5: RESUMEN DE TRATAMIENTOS Y MEDICAMENTOS
-        if medicamentos or vacunas:
-            story.append(PageBreak())
-            story.append(Paragraph("5. RESUMEN DE TRATAMIENTOS", section_title_style))
-        
-        # Vacunaciones en formato de párrafos
-        if vacunas:
-            story.append(Paragraph("HISTORIAL DE VACUNACIÓN", subsection_style))
-            
-            for i, vacuna in enumerate(vacunas, 1):
-                story.append(Paragraph(f"<b>Vacunación #{i}</b>", highlight_style))
-                
-                fecha_aplicacion = vacuna['fecha_aplicacion'].strftime('%d/%m/%Y') if vacuna['fecha_aplicacion'] else 'N/A'
-                story.append(Paragraph(f"<b>Fecha:</b> {fecha_aplicacion}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Vacuna Aplicada:</b> {vacuna['nombre_vacuna'] or 'N/A'}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Lote:</b> {vacuna['lote'] or 'N/A'}", highlight_style))
-                
-                proxima_dosis = vacuna['proxima_dosis'].strftime('%d/%m/%Y') if vacuna['proxima_dosis'] else 'N/A'
-                story.append(Paragraph(f"<b>Próxima Dosis:</b> {proxima_dosis}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Veterinario:</b> {vacuna['veterinario_aplicador'] or 'N/A'}", highlight_style))
-                
-                story.append(Spacer(1, 10))
-            
-            story.append(Spacer(1, 20))
-        
-        # Medicamentos en formato de párrafos
-        if medicamentos:
-            story.append(Paragraph("HISTORIAL DE MEDICAMENTOS PRESCRITOS", subsection_style))
-            
-            for i, med in enumerate(medicamentos, 1):
-                story.append(Paragraph(f"<b>Medicamento #{i}</b>", highlight_style))
-                
-                fecha_consulta = med['fecha_consulta'].strftime('%d/%m/%Y') if med['fecha_consulta'] else 'N/A'
-                story.append(Paragraph(f"<b>Fecha:</b> {fecha_consulta}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Medicamento:</b> {med['nombre_medicamento'] or 'N/A'}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Dosis:</b> {med['dosis'] or 'N/A'}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Frecuencia:</b> {med['frecuencia'] or 'N/A'}", highlight_style))
-                
-                story.append(Paragraph(f"<b>Duración:</b> {med['duracion'] or 'N/A'}", highlight_style))
-                
-                story.append(Spacer(1, 10))
-            
-            story.append(Spacer(1, 20))
-        
-        # Enfermedades diagnosticadas
-        if enfermedades:
-            story.append(Paragraph("REGISTRO DE ENFERMEDADES DIAGNOSTICADAS", subsection_style))
-            
-            enf_data = [['FECHA', 'ENFERMEDAD', 'GRAVEDAD', 'ESTADO ACTUAL']]
-            for enf in enfermedades:
-                enf_data.append([
-                    enf['fecha_consulta'].strftime('%d/%m/%Y') if enf['fecha_consulta'] else 'N/A',
-                    enf['nombre_enfermedad'] or 'N/A',
-                    enf['gravedad'] or 'N/A',
-                    enf['estado_enfermedad'] or 'N/A'
-                ])
-            
-            enf_table = Table(enf_data, colWidths=[1.2*inch, 2.5*inch, 1.2*inch, 1.1*inch])
-            enf_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc2626')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fef2f2')]),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ]))
-            story.append(enf_table)
-            story.append(Spacer(1, 30))
-        
-        # Pie de página profesional
-        story.append(Spacer(1, 40))
-        story.append(Paragraph("═" * 80, ParagraphStyle('DecorativeLine', 
-                      parent=styles['Normal'], fontSize=8, 
-                      textColor=colors.HexColor('#6b7280'), alignment=1)))
-        
-        footer_info = [
-            f"<b>Documento generado:</b> {datetime.now().strftime('%d de %B de %Y a las %H:%M')}",
-            f"<b>Clínica Veterinaria MediPet</b> - Sistema de Gestión Veterinaria",
-            f"<b>Historia Clínica N°:</b> {historia['Idhistoria']} | <b>Paciente:</b> {historia['nombre_mascota']}"
-        ]
-        
-        for info in footer_info:
-            story.append(Paragraph(info, ParagraphStyle('Footer', 
-                         parent=styles['Normal'], fontSize=8, 
-                         textColor=colors.HexColor('#6b7280'), 
-                         alignment=1, spaceAfter=3)))
-        
-        # Construir PDF
-        doc.build(story)
-        
-        # Crear nombre de archivo seguro (sin espacios ni caracteres especiales)
-        import re
-        
-        nombre_mascota_seguro = re.sub(r'[^a-zA-Z0-9_-]', '_', historia["nombre_mascota"] or "mascota")
-        nombre_archivo = f'historia_clinica_{nombre_mascota_seguro}_{historia["Idhistoria"]}.pdf'
-        
-        # Preparar respuesta HTTP con el PDF
-        buffer.seek(0)
-        response = make_response(buffer.getvalue())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
-        
-        return response
-        
-    except mysql.connector.Error as err:
-        flash(f'Error al generar PDF: {err}', 'error')
-        return redirect(url_for('ver_historia_clinica', id=id))
     finally:
         cursor.close()
         conn.close()
@@ -3757,9 +2703,8 @@ def crear_consulta(historia_id):
 @app.route('/consulta/ver/<int:consulta_id>')
 def ver_consulta(consulta_id):
     """Ver detalles completos de una consulta"""
-    # Temporalmente comentado para pruebas
-    # if 'user_id' not in session:
-    #     return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
     conn = get_db()
     if not conn:
@@ -3773,18 +2718,14 @@ def ver_consulta(consulta_id):
         cursor.execute("""
             SELECT 
                 c.*,
-                hc.Idhistoria as idhistoria,
+                hc.Idhistoria,
                 m.nombre as nombre_mascota,
                 m.codigo as codigo_mascota,
-                m.sexo,
-                m.fecha_nac,
-                r.nombre as raza,
                 CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
                 CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_consulta
             FROM consulta c
             JOIN historia_clinica hc ON c.idhistoria = hc.Idhistoria
             JOIN mascota m ON hc.idmascota = m.Idmascota
-            LEFT JOIN raza r ON m.idraza = r.Idraza
             JOIN persona p ON m.idduenio = p.Idpersona
             LEFT JOIN Usuario u ON c.veterinario_consulta = u.Idusuario
             LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
@@ -3918,6 +2859,467 @@ def prescribir_medicamento(consulta_id):
     except mysql.connector.Error as err:
         flash(f'Error al cargar datos: {err}', 'error')
         return redirect(url_for('ver_consulta', consulta_id=consulta_id))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# =====================================================
+# RUTAS COMPLETAS PARA HISTORIAS CLÍNICAS
+# =====================================================
+
+@app.route('/historias_clinicas')
+def gestion_historias_clinicas():
+    """Gestión principal de historias clínicas"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('menu_principal'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener estadísticas
+        cursor.execute("SELECT COUNT(*) as total_historias FROM historia_clinica WHERE estado = TRUE")
+        stats = cursor.fetchone()
+        total_historias = stats['total_historias'] if stats else 0
+        
+        cursor.execute("""
+            SELECT COUNT(*) as consultas_mes 
+            FROM consulta 
+            WHERE estado = TRUE 
+            AND MONTH(fecha_consulta) = MONTH(CURDATE()) 
+            AND YEAR(fecha_consulta) = YEAR(CURDATE())
+        """)
+        stats = cursor.fetchone()
+        consultas_mes = stats['consultas_mes'] if stats else 0
+        
+        # Obtener historias clínicas con información básica
+        cursor.execute("""
+            SELECT 
+                hc.Idhistoria,
+                hc.fecha_apertura,
+                m.nombre as nombre_mascota,
+                m.codigo as codigo_mascota,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
+                (SELECT COUNT(*) FROM consulta c WHERE c.idhistoria = hc.Idhistoria AND c.estado = TRUE) as total_consultas,
+                (SELECT MAX(fecha_consulta) FROM consulta c WHERE c.idhistoria = hc.Idhistoria AND c.estado = TRUE) as ultima_consulta
+            FROM historia_clinica hc
+            JOIN mascota m ON hc.idmascota = m.Idmascota
+            JOIN persona p ON m.idduenio = p.Idpersona
+            WHERE hc.estado = TRUE
+            ORDER BY hc.fecha_apertura DESC
+        """)
+        historias = cursor.fetchall()
+        
+        return render_template('gestion_historias_clinicas.html', 
+                             historias=historias, 
+                             total_historias=total_historias, 
+                             consultas_mes=consultas_mes)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar historias clínicas: {err}', 'error')
+        return redirect(url_for('menu_principal'))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/historia_clinica/<int:id>')
+def ver_historia_clinica(id):
+    """Ver una historia clínica específica"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_historias_clinicas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener información de la historia clínica
+        cursor.execute("""
+            SELECT 
+                hc.*,
+                m.nombre as nombre_mascota,
+                m.codigo as codigo_mascota,
+                m.sexo,
+                m.fecha_nac,
+                r.nombre as raza,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
+                p.tele as telefono_propietario,
+                CONCAT(vet.nom1, ' ', vet.apell1) as veterinario_responsable
+            FROM historia_clinica hc
+            JOIN mascota m ON hc.idmascota = m.Idmascota
+            LEFT JOIN raza r ON m.idraza = r.Idraza
+            JOIN persona p ON m.idduenio = p.Idpersona
+            LEFT JOIN Usuario u ON hc.veterinario_responsable = u.Idusuario
+            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
+            WHERE hc.Idhistoria = %s AND hc.estado = TRUE
+        """, (id,))
+        
+        historia = cursor.fetchone()
+        if not historia:
+            flash('Historia clínica no encontrada.', 'error')
+            return redirect(url_for('gestion_historias_clinicas'))
+        
+        # Obtener consultas
+        cursor.execute("""
+            SELECT 
+                c.*,
+                CONCAT(vet.nom1, ' ', vet.apell1) as nombre_veterinario
+            FROM consulta c
+            LEFT JOIN Usuario u ON c.veterinario_consulta = u.Idusuario
+            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
+            WHERE c.idhistoria = %s AND c.estado = TRUE
+            ORDER BY c.fecha_consulta DESC, c.hora_consulta DESC
+        """, (id,))
+        consultas = cursor.fetchall()
+        
+        # Obtener vacunaciones
+        cursor.execute("""
+            SELECT 
+                vh.*,
+                CONCAT(vet.nom1, ' ', vet.apell1) as nombre_veterinario
+            FROM vacunacion_historia vh
+            LEFT JOIN Usuario u ON vh.veterinario_aplicador = u.Idusuario
+            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
+            WHERE vh.idhistoria = %s AND vh.estado = TRUE
+            ORDER BY vh.fecha_aplicacion DESC
+        """, (id,))
+        vacunaciones = cursor.fetchall()
+        
+        return render_template('ver_historia_clinica.html', 
+                             historia=historia, 
+                             consultas=consultas, 
+                             vacunaciones=vacunaciones)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar historia clínica: {err}', 'error')
+        return redirect(url_for('gestion_historias_clinicas'))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/crear_consulta/<int:historia_id>', methods=['GET', 'POST'])
+def crear_consulta(historia_id):
+    """Crear nueva consulta médica"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('ver_historia_clinica', id=historia_id))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            fecha_consulta = request.form['fecha_consulta']
+            hora_consulta = request.form.get('hora_consulta') or None
+            motivo_consulta = request.form['motivo_consulta']
+            anamnesis = request.form.get('anamnesis', '')
+            
+            # Signos vitales
+            temperatura = request.form.get('temperatura') or None
+            frecuencia_cardiaca = request.form.get('frecuencia_cardiaca') or None
+            frecuencia_respiratoria = request.form.get('frecuencia_respiratoria') or None
+            peso = request.form.get('peso') or None
+            
+            # Examen físico
+            examen_general = request.form.get('examen_general', '')
+            sistema_cardiovascular = request.form.get('sistema_cardiovascular', '')
+            sistema_respiratorio = request.form.get('sistema_respiratorio', '')
+            sistema_digestivo = request.form.get('sistema_digestivo', '')
+            sistema_neurologico = request.form.get('sistema_neurologico', '')
+            sistema_musculoesqueletico = request.form.get('sistema_musculoesqueletico', '')
+            piel_anexos = request.form.get('piel_anexos', '')
+            ojos_oidos_boca = request.form.get('ojos_oidos_boca', '')
+            
+            # Diagnósticos y tratamiento
+            diagnostico_diferencial = request.form.get('diagnostico_diferencial', '')
+            diagnostico_definitivo = request.form.get('diagnostico_definitivo', '')
+            plan_terapeutico = request.form.get('plan_terapeutico', '')
+            observaciones = request.form.get('observaciones', '')
+            proxima_cita = request.form.get('proxima_cita') or None
+            
+            # Insertar consulta
+            query = """
+                INSERT INTO consulta (
+                    idhistoria, fecha_consulta, hora_consulta, motivo_consulta, anamnesis,
+                    temperatura, frecuencia_cardiaca, frecuencia_respiratoria, peso,
+                    examen_general, sistema_cardiovascular, sistema_respiratorio, sistema_digestivo,
+                    sistema_neurologico, sistema_musculoesqueletico, piel_anexos, ojos_oidos_boca,
+                    diagnostico_diferencial, diagnostico_definitivo, plan_terapeutico, observaciones,
+                    proxima_cita, veterinario_consulta, estado
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+            
+            cursor.execute(query, (
+                historia_id, fecha_consulta, hora_consulta, motivo_consulta, anamnesis,
+                temperatura, frecuencia_cardiaca, frecuencia_respiratoria, peso,
+                examen_general, sistema_cardiovascular, sistema_respiratorio, sistema_digestivo,
+                sistema_neurologico, sistema_musculoesqueletico, piel_anexos, ojos_oidos_boca,
+                diagnostico_diferencial, diagnostico_definitivo, plan_terapeutico, observaciones,
+                proxima_cita, session['user_id'], True
+            ))
+            
+            conn.commit()
+            flash('Consulta registrada exitosamente.', 'success')
+            return redirect(url_for('ver_historia_clinica', id=historia_id))
+            
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al registrar consulta: {err}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    # GET: Mostrar formulario
+    try:
+        # Obtener información de la historia clínica
+        cursor.execute("""
+            SELECT 
+                hc.*,
+                m.nombre as nombre_mascota,
+                m.codigo as codigo_mascota,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario
+            FROM historia_clinica hc
+            JOIN mascota m ON hc.idmascota = m.Idmascota
+            JOIN persona p ON m.idduenio = p.Idpersona
+            WHERE hc.Idhistoria = %s AND hc.estado = TRUE
+        """, (historia_id,))
+        
+        historia = cursor.fetchone()
+        if not historia:
+            flash('Historia clínica no encontrada.', 'error')
+            return redirect(url_for('gestion_historias_clinicas'))
+        
+        # Pasar fecha actual
+        fecha_actual = datetime.now().strftime('%Y-%m-%d')
+        
+        return render_template('crear_consulta.html', 
+                             historia=historia, 
+                             fecha_actual=fecha_actual)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        return redirect(url_for('gestion_historias_clinicas'))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/consulta/<int:id>')
+def ver_consulta(id):
+    """Ver una consulta específica"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_historias_clinicas'))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Obtener información de la consulta
+        cursor.execute("""
+            SELECT 
+                c.*,
+                hc.Idhistoria as idhistoria_clinica,
+                m.nombre as nombre_mascota,
+                m.codigo as codigo_mascota,
+                m.sexo,
+                m.fecha_nac,
+                r.nombre as raza,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario,
+                CONCAT(vet.nom1, ' ', vet.apell1) as nombre_veterinario
+            FROM consulta c
+            JOIN historia_clinica hc ON c.idhistoria = hc.Idhistoria
+            JOIN mascota m ON hc.idmascota = m.Idmascota
+            LEFT JOIN raza r ON m.idraza = r.Idraza
+            JOIN persona p ON m.idduenio = p.Idpersona
+            LEFT JOIN Usuario u ON c.veterinario_consulta = u.Idusuario
+            LEFT JOIN persona vet ON u.idpersona = vet.Idpersona
+            WHERE c.Idconsulta = %s AND c.estado = TRUE
+        """, (id,))
+        
+        consulta = cursor.fetchone()
+        if not consulta:
+            flash('Consulta no encontrada.', 'error')
+            return redirect(url_for('gestion_historias_clinicas'))
+        
+        # Obtener medicamentos prescritos
+        cursor.execute("""
+            SELECT 
+                mp.*,
+                med.nombre as nombre_medicamento
+            FROM medicamento_prescrito mp
+            JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
+            WHERE mp.idconsulta = %s
+            ORDER BY mp.fecha_creacion DESC
+        """, (id,))
+        medicamentos_prescritos = cursor.fetchall()
+        
+        # Obtener procedimientos realizados
+        cursor.execute("""
+            SELECT 
+                ph.*,
+                tp.nombre as nombre_procedimiento
+            FROM procedimiento_historia ph
+            JOIN tipoprocedimiento tp ON ph.idtipo_procedimiento = tp.Idprocedimiento
+            WHERE ph.idconsulta = %s
+            ORDER BY ph.fecha_procedimiento DESC
+        """, (id,))
+        procedimientos_realizados = cursor.fetchall()
+        
+        # Obtener estudios complementarios
+        cursor.execute("""
+            SELECT *
+            FROM estudio_complementario
+            WHERE idconsulta = %s
+            ORDER BY fecha_solicitud DESC
+        """, (id,))
+        estudios_complementarios = cursor.fetchall()
+        
+        # Verificar si el usuario puede editar
+        can_edit = (session.get('user_profile') == 'Administrador' or 
+                   session.get('user_id') == consulta['veterinario_consulta'])
+        
+        return render_template('ver_consulta.html', 
+                             consulta=consulta,
+                             historia=consulta,
+                             medicamentos_prescritos=medicamentos_prescritos,
+                             procedimientos_realizados=procedimientos_realizados,
+                             estudios_complementarios=estudios_complementarios,
+                             can_edit=can_edit)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar consulta: {err}', 'error')
+        return redirect(url_for('gestion_historias_clinicas'))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/prescribir_medicamento/<int:consulta_id>', methods=['GET', 'POST'])
+def prescribir_medicamento(consulta_id):
+    """Prescribir medicamento para una consulta"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('ver_consulta', id=consulta_id))
+    
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        try:
+            # Obtener datos del formulario
+            idmedicamento = request.form['idmedicamento']
+            dosis = request.form['dosis']
+            frecuencia = request.form['frecuencia']
+            duracion = request.form['duracion']
+            via_administracion = request.form.get('via_administracion', 'oral')
+            indicaciones_especiales = request.form.get('instrucciones', '')
+            fecha_inicio = request.form.get('fecha_inicio')
+            observaciones = request.form.get('observaciones', '')
+            
+            # Manejar frecuencia personalizada
+            if frecuencia == 'Personalizada':
+                frecuencia = request.form.get('frecuencia_custom', '')
+            
+            # Insertar prescripción
+            query = """
+                INSERT INTO medicamento_prescrito (
+                    idconsulta, idmedicamento, dosis, frecuencia, duracion,
+                    via_administracion, indicaciones_especiales, fecha_inicio, estado
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'activo')
+            """
+            
+            cursor.execute(query, (
+                consulta_id, idmedicamento, dosis, frecuencia, duracion,
+                via_administracion, indicaciones_especiales, fecha_inicio
+            ))
+            
+            conn.commit()
+            flash('Medicamento prescrito exitosamente.', 'success')
+            return redirect(url_for('ver_consulta', id=consulta_id))
+            
+        except mysql.connector.Error as err:
+            conn.rollback()
+            flash(f'Error al prescribir medicamento: {err}', 'error')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    # GET: Mostrar formulario
+    try:
+        # Obtener medicamentos disponibles
+        cursor.execute("""
+            SELECT Idmedicamento, nombre, presentacion
+            FROM medicamento
+            WHERE estado = TRUE
+            ORDER BY nombre
+        """)
+        medicamentos = cursor.fetchall()
+        
+        # Obtener información de la consulta
+        cursor.execute("""
+            SELECT 
+                c.*,
+                hc.Idhistoria,
+                m.nombre as nombre_mascota,
+                m.codigo as codigo_mascota,
+                CONCAT(p.nom1, ' ', p.apell1) as nombre_propietario
+            FROM consulta c
+            JOIN historia_clinica hc ON c.idhistoria = hc.Idhistoria
+            JOIN mascota m ON hc.idmascota = m.Idmascota
+            JOIN persona p ON m.idduenio = p.Idpersona
+            WHERE c.Idconsulta = %s AND c.estado = TRUE
+        """, (consulta_id,))
+        
+        consulta = cursor.fetchone()
+        if not consulta:
+            flash('Consulta no encontrada.', 'error')
+            return redirect(url_for('gestion_historias_clinicas'))
+        
+        # Obtener medicamentos actuales del paciente
+        cursor.execute("""
+            SELECT 
+                mp.*,
+                med.nombre as nombre_medicamento
+            FROM medicamento_prescrito mp
+            JOIN medicamento med ON mp.idmedicamento = med.Idmedicamento
+            JOIN consulta c ON mp.idconsulta = c.Idconsulta
+            WHERE c.idhistoria = %s AND mp.estado = 'activo'
+            ORDER BY mp.fecha_creacion DESC
+        """, (consulta['Idhistoria'],))
+        medicamentos_actuales = cursor.fetchall()
+        
+        return render_template('prescribir_medicamento.html', 
+                             medicamentos=medicamentos, 
+                             consulta=consulta,
+                             historia=consulta,
+                             medicamentos_actuales=medicamentos_actuales)
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al cargar datos: {err}', 'error')
+        return redirect(url_for('ver_consulta', id=consulta_id))
     finally:
         cursor.close()
         conn.close()

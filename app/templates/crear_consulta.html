@@ -1,0 +1,387 @@
+{% extends "layout.html" %}
+
+{% block title %}Nueva Consulta - {{ historia.nombre_mascota }}{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center">
+            <a href="{{ url_for('ver_historia_clinica', id=historia.Idhistoria) }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200 mr-4">
+                <i class="fas fa-arrow-left mr-2"></i> Volver
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Nueva Consulta</h1>
+                <p class="text-lg text-gray-600">{{ historia.nombre_mascota }} - {{ historia.nombre_propietario }}</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna Principal del Formulario -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Información Básica de la Consulta -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar text-blue-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">Información de la Consulta</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="fecha_consulta" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-calendar-day text-blue-500 mr-2"></i>
+                                Fecha de Consulta <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <input type="date" name="fecha_consulta" id="fecha_consulta" required
+                                   value="{{ fecha_actual or '' }}"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label for="hora_consulta" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                                <i class="fas fa-clock text-blue-500 mr-2"></i>
+                                Hora de Consulta
+                            </label>
+                            <input type="time" name="hora_consulta" id="hora_consulta"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label for="motivo_consulta" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-clipboard-list text-blue-500 mr-2"></i>
+                            Motivo de Consulta <span class="text-red-500 ml-1">*</span>
+                        </label>
+                        <textarea name="motivo_consulta" id="motivo_consulta" required rows="3"
+                                  placeholder="Describe el motivo de la consulta..."
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label for="anamnesis" class="flex items-center text-sm font-semibold text-gray-700 mb-3">
+                            <i class="fas fa-notes-medical text-blue-500 mr-2"></i>
+                            Anamnesis (Historia Actual)
+                        </label>
+                        <textarea name="anamnesis" id="anamnesis" rows="4"
+                                  placeholder="Historia actual de la enfermedad, síntomas, evolución..."
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                    </div>
+                </div>
+
+                <!-- Signos Vitales -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-heartbeat text-red-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">Signos Vitales</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div>
+                            <label for="temperatura" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Temperatura (°C)
+                            </label>
+                            <input type="number" name="temperatura" id="temperatura" step="0.1" min="35" max="45"
+                                   placeholder="38.5"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label for="frecuencia_cardiaca" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Freq. Cardíaca (lpm)
+                            </label>
+                            <input type="number" name="frecuencia_cardiaca" id="frecuencia_cardiaca" min="40" max="300"
+                                   placeholder="120"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label for="frecuencia_respiratoria" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Freq. Respiratoria (rpm)
+                            </label>
+                            <input type="number" name="frecuencia_respiratoria" id="frecuencia_respiratoria" min="10" max="80"
+                                   placeholder="25"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label for="peso" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Peso (kg)
+                            </label>
+                            <input type="number" name="peso" id="peso" step="0.1" min="0.1" max="200"
+                                   placeholder="15.5"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Examen Físico -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-search-plus text-green-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">Examen Físico</h2>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label for="examen_general" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Examen General
+                            </label>
+                            <textarea name="examen_general" id="examen_general" rows="3"
+                                      placeholder="Estado general, actitud, condición corporal..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="sistema_cardiovascular" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sistema Cardiovascular
+                                </label>
+                                <textarea name="sistema_cardiovascular" id="sistema_cardiovascular" rows="2"
+                                          placeholder="Auscultación cardíaca, pulso, perfusión..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="sistema_respiratorio" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sistema Respiratorio
+                                </label>
+                                <textarea name="sistema_respiratorio" id="sistema_respiratorio" rows="2"
+                                          placeholder="Auscultación pulmonar, tipo de respiración..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="sistema_digestivo" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sistema Digestivo
+                                </label>
+                                <textarea name="sistema_digestivo" id="sistema_digestivo" rows="2"
+                                          placeholder="Palpación abdominal, mucosas, dentición..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="sistema_neurologico" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sistema Neurológico
+                                </label>
+                                <textarea name="sistema_neurologico" id="sistema_neurologico" rows="2"
+                                          placeholder="Reflejos, coordinación, estado mental..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="sistema_musculoesqueletico" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sistema Musculoesquelético
+                                </label>
+                                <textarea name="sistema_musculoesqueletico" id="sistema_musculoesqueletico" rows="2"
+                                          placeholder="Locomoción, articulaciones, músculos..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="piel_anexos" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Piel y Anexos
+                                </label>
+                                <textarea name="piel_anexos" id="piel_anexos" rows="2"
+                                          placeholder="Estado de la piel, pelo, uñas..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="ojos_oidos_boca" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Ojos, Oídos y Boca
+                            </label>
+                            <textarea name="ojos_oidos_boca" id="ojos_oidos_boca" rows="2"
+                                      placeholder="Examen oftalmológico, otoscópico y oral..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnósticos y Tratamiento -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-diagnoses text-purple-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800">Diagnósticos y Tratamiento</h2>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label for="diagnostico_diferencial" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Diagnóstico Diferencial
+                            </label>
+                            <textarea name="diagnostico_diferencial" id="diagnostico_diferencial" rows="3"
+                                      placeholder="Posibles diagnósticos a considerar..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label for="diagnostico_definitivo" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Diagnóstico Definitivo
+                            </label>
+                            <textarea name="diagnostico_definitivo" id="diagnostico_definitivo" rows="2"
+                                      placeholder="Diagnóstico final confirmado..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label for="plan_terapeutico" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Plan Terapéutico
+                            </label>
+                            <textarea name="plan_terapeutico" id="plan_terapeutico" rows="4"
+                                      placeholder="Tratamiento prescrito, medicamentos, dosis, instrucciones..."
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="observaciones" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Observaciones Adicionales
+                                </label>
+                                <textarea name="observaciones" id="observaciones" rows="3"
+                                          placeholder="Notas adicionales sobre la consulta..."
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="proxima_cita" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Próxima Cita (Recomendada)
+                                </label>
+                                <input type="date" name="proxima_cita" id="proxima_cita"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <p class="mt-1 text-xs text-gray-500">Fecha recomendada para seguimiento</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna de Información -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">Información del Paciente</h3>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- Datos de la Mascota -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-700 mb-2">Mascota</h4>
+                            <p class="text-lg font-bold text-gray-900">{{ historia.nombre_mascota }}</p>
+                            <p class="text-sm text-gray-600">Código: {{ historia.codigo_mascota }}</p>
+                        </div>
+                        
+                        <!-- Propietario -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-700 mb-2">Propietario</h4>
+                            <p class="text-sm font-medium text-gray-900">{{ historia.nombre_propietario }}</p>
+                        </div>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="space-y-3 pt-4">
+                            <button type="submit" 
+                                    class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                                <i class="fas fa-save mr-2"></i> Guardar Consulta
+                            </button>
+                            
+                            <a href="{{ url_for('ver_historia_clinica', id=historia.Idhistoria) }}" 
+                               class="w-full inline-flex items-center justify-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200">
+                                <i class="fas fa-times mr-2"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de ayuda -->
+                    <div class="mt-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 class="text-sm font-semibold text-blue-800 mb-2">
+                            <i class="fas fa-lightbulb mr-1"></i> Consejos
+                        </h4>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            <li>• Los campos marcados con (*) son obligatorios</li>
+                            <li>• Registre todos los hallazgos relevantes</li>
+                            <li>• Sea específico en los diagnósticos</li>
+                            <li>• Incluya instrucciones claras de tratamiento</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+// Auto-focus en el primer campo
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('motivo_consulta').focus();
+    
+    // Establecer fecha actual si no hay valor
+    const fechaInput = document.getElementById('fecha_consulta');
+    if (!fechaInput.value) {
+        const today = new Date();
+        const formattedDate = today.getFullYear() + '-' + 
+                            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(today.getDate()).padStart(2, '0');
+        fechaInput.value = formattedDate;
+    }
+    
+    // Establecer hora actual por defecto
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 5);
+    document.getElementById('hora_consulta').value = timeString;
+});
+
+// Validación en tiempo real de campos numéricos
+document.getElementById('temperatura').addEventListener('input', function() {
+    const value = parseFloat(this.value);
+    if (value && (value < 35 || value > 45)) {
+        this.style.borderColor = '#EF4444';
+        this.title = 'Temperatura fuera del rango normal (35-45°C)';
+    } else {
+        this.style.borderColor = '#D1D5DB';
+        this.title = '';
+    }
+});
+
+document.getElementById('frecuencia_cardiaca').addEventListener('input', function() {
+    const value = parseInt(this.value);
+    if (value && (value < 40 || value > 300)) {
+        this.style.borderColor = '#EF4444';
+        this.title = 'Frecuencia cardíaca fuera del rango normal';
+    } else {
+        this.style.borderColor = '#D1D5DB';
+        this.title = '';
+    }
+});
+
+// Feedback visual al enviar
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+    submitBtn.disabled = true;
+});
+</script>
+{% endblock %}

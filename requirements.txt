@@ -2,3 +2,5 @@ Flask
 mysql-connector-python
 Flask-Mail
 APScheduler
+reportlab
+Pillow

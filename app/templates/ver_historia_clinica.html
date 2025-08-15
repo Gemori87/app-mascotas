@@ -1,0 +1,406 @@
+{% extends "layout.html" %}
+
+{% block title %}Historia Clínica - {{ historia.nombre_mascota }}{% endblock %}
+
+{% block content %}
+<style>
+body {
+    background: url("{{ url_for('static', filename='media/doc3.jpg') }}") center center no-repeat;
+    background-size: cover;
+}
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Encabezado -->
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center">
+            <a href="{{ url_for('gestion_historias_clinicas') }}" 
+               class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors duration-200 mr-4">
+                <i class="fas fa-arrow-left mr-2"></i> Volver
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Historia Clínica</h1>
+                <p class="text-lg text-gray-600">{{ historia.nombre_mascota }} - {{ historia.codigo_mascota }}</p>
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{{ url_for('historia_clinica_pdf', id=historia.Idhistoria) }}" 
+               target="_blank"
+               class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl">
+                <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
+            </a>
+            {% if historia.correo_propietario %}
+            <a href="{{ url_for('enviar_historia_clinica_pdf', id=historia.Idhistoria) }}" 
+               class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl">
+                <i class="fas fa-envelope mr-2"></i> Enviar por Email
+            </a>
+            {% endif %}
+            <a href="{{ url_for('crear_consulta', historia_id=historia.Idhistoria) }}" 
+               class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                <i class="fas fa-plus mr-2"></i> Nueva Consulta
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Información Principal -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-lg p-6 sticky top-6">
+                <!-- Información de la Mascota -->
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-paw text-3xl text-green-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">{{ historia.nombre_mascota }}</h2>
+                    <p class="text-gray-600">{{ historia.codigo_mascota }}</p>
+                </div>
+
+                <!-- Datos Básicos -->
+                <div class="space-y-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-700 mb-2">Información Básica</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Raza:</span>
+                                <span class="font-medium">{{ historia.raza }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Sexo:</span>
+                                <span class="font-medium">{{ historia.sexo }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Edad:</span>
+                                <span class="font-medium">
+                                    {% if historia.edad_años > 0 %}
+                                        {{ historia.edad_años }} años
+                                        {% if historia.edad_meses > 0 %}
+                                            y {{ historia.edad_meses }} meses
+                                        {% endif %}
+                                    {% else %}
+                                        {{ historia.edad_meses }} meses
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Fecha Nacimiento:</span>
+                                <span class="font-medium">{{ historia.fecha_nac.strftime('%d/%m/%Y') if historia.fecha_nac else 'No disponible' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Propietario -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-700 mb-2">Propietario</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Nombre:</span>
+                                <span class="font-medium">{{ historia.nombre_propietario }}</span>
+                            </div>
+                            {% if historia.telefono_propietario %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Teléfono:</span>
+                                <span class="font-medium">{{ historia.telefono_propietario }}</span>
+                            </div>
+                            {% endif %}
+                            {% if historia.correo_propietario %}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Email:</span>
+                                <span class="font-medium text-xs">{{ historia.correo_propietario }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Veterinario Responsable -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-700 mb-2">Veterinario Responsable</h3>
+                        <p class="text-sm font-medium">{{ historia.veterinario_responsable or 'No asignado' }}</p>
+                    </div>
+
+                    <!-- Alergias y Observaciones -->
+                    {% if historia.alergias_conocidas %}
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                        <h3 class="font-semibold text-red-700 mb-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Alergias Conocidas
+                        </h3>
+                        <p class="text-sm text-red-600">{{ historia.alergias_conocidas }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if historia.observaciones_generales %}
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h3 class="font-semibold text-blue-700 mb-2">Observaciones Generales</h3>
+                        <p class="text-sm text-blue-600">{{ historia.observaciones_generales }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Consultas y Procedimientos -->
+        <div class="lg:col-span-2">
+            <!-- Resumen de Actividad -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-stethoscope text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Consultas</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ consultas|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-syringe text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Vacunas</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ vacunas|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Última Consulta</p>
+                            <p class="text-sm font-bold text-gray-900">
+                                {% if consultas %}
+                                    {{ consultas[0].fecha_consulta.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Sin consultas
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs de Contenido -->
+            <div class="bg-white rounded-xl shadow-lg">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+                        <button onclick="showTab('consultas')" id="tab-consultas" 
+                                class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <i class="fas fa-stethoscope mr-2"></i> Consultas ({{ consultas|length }})
+                        </button>
+                        <button onclick="showTab('vacunas')" id="tab-vacunas" 
+                                class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            <i class="fas fa-syringe mr-2"></i> Vacunas ({{ vacunas|length }})
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Contenido de Consultas -->
+                <div id="content-consultas" class="tab-content p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Historial de Consultas</h3>
+                    
+                    {% if consultas %}
+                        <div class="space-y-4">
+                            {% for consulta in consultas %}
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-stethoscope text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800">{{ consulta.fecha_consulta.strftime('%d/%m/%Y') }}</h4>
+                                            <p class="text-sm text-gray-600">Dr. {{ consulta.veterinario_consulta or 'No especificado' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {{ consulta.estado_consulta }}
+                                        </span>
+                                        <a href="{{ url_for('ver_consulta', consulta_id=consulta.Idconsulta) }}" 
+                                           class="inline-flex items-center px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-colors duration-200">
+                                            <i class="fas fa-eye mr-1"></i> Ver Detalles
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p class="font-medium text-gray-700">Motivo de Consulta:</p>
+                                        <p class="text-gray-600">{{ consulta.motivo_consulta }}</p>
+                                    </div>
+                                    
+                                    {% if consulta.diagnostico_definitivo %}
+                                    <div>
+                                        <p class="font-medium text-gray-700">Diagnóstico:</p>
+                                        <p class="text-gray-600">{{ consulta.diagnostico_definitivo }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if consulta.peso %}
+                                    <div>
+                                        <p class="font-medium text-gray-700">Peso:</p>
+                                        <p class="text-gray-600">{{ consulta.peso }} kg</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if consulta.temperatura %}
+                                    <div>
+                                        <p class="font-medium text-gray-700">Temperatura:</p>
+                                        <p class="text-gray-600">{{ consulta.temperatura }}°C</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if consulta.proxima_cita %}
+                                <div class="mt-3 p-2 bg-yellow-50 rounded-md">
+                                    <p class="text-sm text-yellow-700">
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        Próxima cita: {{ consulta.proxima_cita.strftime('%d/%m/%Y') }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="mx-auto h-16 w-16 text-gray-400">
+                                <i class="fas fa-stethoscope text-4xl"></i>
+                            </div>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">No hay consultas registradas</h3>
+                            <p class="mt-2 text-sm text-gray-500">
+                                Comience creando la primera consulta médica.
+                            </p>
+                            <div class="mt-6">
+                                <a href="{{ url_for('crear_consulta', historia_id=historia.Idhistoria) }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors duration-200">
+                                    <i class="fas fa-plus mr-2"></i> Primera Consulta
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Contenido de Vacunas -->
+                <div id="content-vacunas" class="tab-content p-6 hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Historial de Vacunaciones</h3>
+                    
+                    {% if vacunas %}
+                        <div class="space-y-4">
+                            {% for vacuna in vacunas %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                            <i class="fas fa-syringe text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800">{{ vacuna.nombre_vacuna }}</h4>
+                                            <p class="text-sm text-gray-600">{{ vacuna.fecha_aplicacion.strftime('%d/%m/%Y') }}</p>
+                                        </div>
+                                    </div>
+                                    {% if vacuna.proxima_dosis %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        Próxima: {{ vacuna.proxima_dosis.strftime('%d/%m/%Y') }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    {% if vacuna.fabricante %}
+                                    <div>
+                                        <p class="font-medium text-gray-700">Fabricante:</p>
+                                        <p class="text-gray-600">{{ vacuna.fabricante }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if vacuna.lote %}
+                                    <div>
+                                        <p class="font-medium text-gray-700">Lote:</p>
+                                        <p class="text-gray-600">{{ vacuna.lote }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <p class="font-medium text-gray-700">Veterinario:</p>
+                                        <p class="text-gray-600">{{ vacuna.veterinario_aplicador or 'No especificado' }}</p>
+                                    </div>
+                                </div>
+                                
+                                {% if vacuna.reacciones_adversas %}
+                                <div class="mt-3 p-2 bg-red-50 rounded-md">
+                                    <p class="text-sm text-red-700">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Reacciones: {{ vacuna.reacciones_adversas }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <div class="mx-auto h-16 w-16 text-gray-400">
+                                <i class="fas fa-syringe text-4xl"></i>
+                            </div>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">No hay vacunas registradas</h3>
+                            <p class="mt-2 text-sm text-gray-500">
+                                Las vacunas se registran durante las consultas médicas.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+.tab-button {
+    border-color: transparent;
+    color: #6B7280;
+}
+
+.tab-button.active {
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.tab-button:hover {
+    color: #059669;
+    border-color: #6EE7B7;
+}
+</style>
+
+<script>
+function showTab(tabName) {
+    // Ocultar todos los contenidos
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remover clase activa de todos los botones
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Mostrar contenido seleccionado
+    document.getElementById('content-' + tabName).classList.remove('hidden');
+    
+    // Activar botón seleccionado
+    document.getElementById('tab-' + tabName).classList.add('active');
+}
+
+// Inicializar primera tab
+document.addEventListener('DOMContentLoaded', function() {
+    showTab('consultas');
+});
+</script>
+{% endblock %}

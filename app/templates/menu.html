@@ -21,6 +21,39 @@ body {
         <p class="text-gray-600 mt-2">Crear, consultar y administrar personas (dueños, empleados).</p>
     </a>
 
+        <!-- Tarjetas solo para Administradores -->
+    {% if session.user_profile == 'Administrador' %}
+    <a href="{{ url_for('gestion_usuarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🔑</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Usuarios</h3>
+        <p class="text-gray-600 mt-2">Administrar las cuentas de acceso al sistema.</p>
+    </a>
+    <a href="{{ url_for('gestion_perfiles') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🛡️</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Perfiles</h3>
+        <p class="text-gray-600 mt-2">Definir los roles y permisos (Admin, Cliente, etc.).</p>
+    </a>
+
+        <a href="{{ url_for('gestion_veterinarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">👤</div>
+        <h3 class="text-2xl font-bold text-gray-800">Dueños & veterinarios</h3>
+        <p class="text-gray-600 mt-2">Asigna un veterinario a los pacientes</p>
+        
+    </a>
+
+        <a href="{{ url_for('gestion_razas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🏷️</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Razas</h3>
+        <p class="text-gray-600 mt-2">Administrar las razas de las mascotas.</p>
+
+    </a>
+
+        <a href="{{ url_for('gestion_mascotas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+        <div class="text-6xl mb-4">🐾</div>
+        <h3 class="text-2xl font-bold text-gray-800">Gestión de Mascotas</h3>
+        <p class="text-gray-600 mt-2">Registrar y consultar la información de las mascotas.</p>
+    </a>
+
     <!-- Tarjeta de Gestión de Procedimientos (Visible para todos los usuarios logueados) -->
     <a href="{{ url_for('gestion_procedimientos') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
         <div class="text-6xl mb-4">🏥</div>
@@ -42,18 +75,6 @@ body {
         <p class="text-gray-600 mt-2">Registrar y consultar enfermedades diagnosticadas en mascotas.</p>
     </a>
 
-    <a href="{{ url_for('gestion_razas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
-        <div class="text-6xl mb-4">🏷️</div>
-        <h3 class="text-2xl font-bold text-gray-800">Gestión de Razas</h3>
-        <p class="text-gray-600 mt-2">Administrar las razas de las mascotas.</p>
-    </a>
-    
-    <a href="{{ url_for('gestion_mascotas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
-        <div class="text-6xl mb-4">🐾</div>
-        <h3 class="text-2xl font-bold text-gray-800">Gestión de Mascotas</h3>
-        <p class="text-gray-600 mt-2">Registrar y consultar la información de las mascotas.</p>
-    </a>
-
     <a href="{{ url_for('gestion_medicamentos') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
         <div class="text-6xl mb-4">💊</div>
         <h3 class="text-2xl font-bold text-gray-800">Gestión de Medicamentos</h3>
@@ -65,25 +86,6 @@ body {
         <div class="text-6xl mb-4">📋</div>
         <h3 class="text-2xl font-bold text-gray-800">Historias Clínicas</h3>
         <p class="text-gray-600 mt-2">Gestionar historias clínicas y consultas veterinarias completas.</p>
-    </a>
-
-    <a href="{{ url_for('gestion_veterinarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
-        <div class="text-6xl mb-4">👤</div>
-        <h3 class="text-2xl font-bold text-gray-800">Dueños & veterinarios</h3>
-        <p class="text-gray-600 mt-2">Asigna un veterinario a los pacientes</p>
-    </a>
-
-    <!-- Tarjetas solo para Administradores -->
-    {% if session.user_profile == 'Administrador' %}
-    <a href="{{ url_for('gestion_usuarios') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
-        <div class="text-6xl mb-4">🔑</div>
-        <h3 class="text-2xl font-bold text-gray-800">Gestión de Usuarios</h3>
-        <p class="text-gray-600 mt-2">Administrar las cuentas de acceso al sistema.</p>
-    </a>
-    <a href="{{ url_for('gestion_perfiles') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">
-        <div class="text-6xl mb-4">🛡️</div>
-        <h3 class="text-2xl font-bold text-gray-800">Gestión de Perfiles</h3>
-        <p class="text-gray-600 mt-2">Definir los roles y permisos (Admin, Cliente, etc.).</p>
     </a>
 
     <a href="{{ url_for('gestion_citas') }}" class="card text-center hover:shadow-xl transition-shadow transform hover:-translate-y-1">

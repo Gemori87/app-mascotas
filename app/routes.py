@@ -1715,8 +1715,13 @@ def gestion_enfermedades_mascotas():
     
     # Construir consulta con filtros
     query = """
-        SELECT me.id, me.idmascota, me.idenfermedad, me.fecha, me.observacion,
-               m.nombre as nombre_mascota, te.nombre as nombre_enfermedad
+        SELECT me.id, me.idmascota, me.idenfermedad, me.fecha,
+               m.nombre as nombre_mascota, te.nombre as nombre_enfermedad,
+               CASE 
+                   WHEN EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mascotaenfermedad' AND COLUMN_NAME = 'estado') 
+                   THEN me.estado 
+                   ELSE TRUE 
+               END as estado
         FROM mascotaenfermedad me
         JOIN mascota m ON me.idmascota = m.Idmascota
         JOIN tipoenfermedad te ON me.idenfermedad = te.Idenfermedad
@@ -1952,11 +1957,11 @@ def ver_enfermedad_mascota(id):
 
 @app.route('/enfermedad-mascota/eliminar/<int:id>')
 def eliminar_enfermedad_mascota(id):
-    """Eliminar registro de enfermedad de mascota"""
+    """Deshabilitar registro de enfermedad de mascota (soft delete)"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Solo administradores pueden eliminar
+    # Solo administradores pueden deshabilitar
     if session.get('user_profile') != 'Administrador':
         flash('No tiene permisos para realizar esta acción.', 'error')
         return redirect(url_for('gestion_enfermedades_mascotas'))
@@ -1975,14 +1980,69 @@ def eliminar_enfermedad_mascota(id):
             flash('Registro no encontrado.', 'error')
             return redirect(url_for('gestion_enfermedades_mascotas'))
         
-        # Eliminar el registro
-        cursor.execute("DELETE FROM mascotaenfermedad WHERE id = %s", (id,))
+        # Primero intentar agregar la columna estado si no existe
+        try:
+            cursor.execute("ALTER TABLE mascotaenfermedad ADD COLUMN estado BOOLEAN DEFAULT TRUE")
+            conn.commit()
+        except mysql.connector.Error:
+            # La columna ya existe, continuar
+            pass
+        
+        # Hacer soft delete
+        cursor.execute("UPDATE mascotaenfermedad SET estado = FALSE WHERE id = %s", (id,))
         conn.commit()
         
-        flash('Registro eliminado exitosamente.', 'success')
+        flash('Registro deshabilitado exitosamente.', 'success')
         
     except mysql.connector.Error as err:
         flash(f'Error al eliminar registro: {err}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('gestion_enfermedades_mascotas'))
+
+@app.route('/enfermedad-mascota/habilitar/<int:id>', methods=['GET'])
+def habilitar_enfermedad_mascota(id):
+    """Habilitar registro de enfermedad de mascota"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Solo administradores pueden habilitar
+    if session.get('user_profile') != 'Administrador':
+        flash('No tiene permisos para realizar esta acción.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    conn = get_db()
+    if not conn:
+        flash('Error de conexión con la base de datos.', 'error')
+        return redirect(url_for('gestion_enfermedades_mascotas'))
+    
+    cursor = conn.cursor()
+    
+    try:
+        # Verificar que existe el registro
+        cursor.execute("SELECT id FROM mascotaenfermedad WHERE id = %s", (id,))
+        if not cursor.fetchone():
+            flash('Registro no encontrado.', 'error')
+            return redirect(url_for('gestion_enfermedades_mascotas'))
+        
+        # Primero intentar agregar la columna estado si no existe
+        try:
+            cursor.execute("ALTER TABLE mascotaenfermedad ADD COLUMN estado BOOLEAN DEFAULT TRUE")
+            conn.commit()
+        except mysql.connector.Error:
+            # La columna ya existe, continuar
+            pass
+        
+        # Habilitar el registro
+        cursor.execute("UPDATE mascotaenfermedad SET estado = TRUE WHERE id = %s", (id,))
+        conn.commit()
+        
+        flash('Registro habilitado exitosamente.', 'success')
+        
+    except mysql.connector.Error as err:
+        flash(f'Error al habilitar registro: {err}', 'error')
     finally:
         cursor.close()
         conn.close()

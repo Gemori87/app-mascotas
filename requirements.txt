@@ -4,3 +4,5 @@ Flask-Mail
 APScheduler
 reportlab
 Pillow
+python-dateutil
+reportlab

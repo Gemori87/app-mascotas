@@ -2398,7 +2398,7 @@ def gestion_citas():
             FROM persona p
             JOIN usuario u ON p.Idpersona = u.Idpersona
             JOIN perfil pr ON u.idperfil = pr.Idperfil
-            WHERE pr.descripc IN ('Administrador', 'empleado') AND p.estado = 1
+            WHERE pr.descripc IN ('Veterinario', 'empleado') AND p.estado = 1
         """)
         veterinarios = cursor.fetchall()
 
